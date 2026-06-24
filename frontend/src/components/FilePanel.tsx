@@ -2,7 +2,7 @@ import { FileEntry } from '../../bindings/androidfs/internal/model/models.js'
 import { FileEntryRow } from './FileEntryRow'
 import { PathBreadcrumb } from './PathBreadcrumb'
 
-export function FilePanel({ title, path, entries, loading, error, onNavigate, onOpen, selectedPath, onSelect }: {
+export function FilePanel({ title, path, entries, loading, error, onNavigate, onOpen, selectedPath, onSelect, onRowContextMenu }: {
   title: string
   path: string
   entries: FileEntry[]
@@ -12,6 +12,7 @@ export function FilePanel({ title, path, entries, loading, error, onNavigate, on
   onOpen: (name: string) => void
   selectedPath: string | null
   onSelect: (p: string) => void
+  onRowContextMenu: (entry: FileEntry, e: React.MouseEvent) => void
 }) {
   return (
     <section className="panel">
@@ -27,7 +28,8 @@ export function FilePanel({ title, path, entries, loading, error, onNavigate, on
         )}
         {entries.map(e => (
           <FileEntryRow key={e.path} entry={e} selected={selectedPath === e.path}
-            onSelect={() => onSelect(e.path)} onOpen={() => onOpen(e.name)} />
+            onSelect={() => onSelect(e.path)} onOpen={() => onOpen(e.name)}
+            onContextMenu={(ev) => onRowContextMenu(e, ev)} />
         ))}
       </div>
     </section>
