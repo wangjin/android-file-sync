@@ -1,14 +1,28 @@
 :root {
-  /* ===== Palette — Precision Instrument ===== */
-  --ink-900: #0E1116;   /* window base (near-black, cool) */
-  --ink-800: #161A21;   /* panel surface */
-  --ink-700: #1F252E;   /* input / hover */
-  --ink-600: #2A313B;   /* borders */
-  --mist:    #8B95A5;   /* secondary text (cool grey) */
-  --frost:   #C7CED9;   /* primary text */
-  --signal:  #38E0C8;   /* ONE accent: data flowing — only this */
+  /* ===== Palette — Brightened Instrument =====
+     Same cool, technical identity as before, but lifted ~1.5 stops so the
+     window no longer reads as dead-black: the panel surface (ink-800) is now
+     clearly raised above the base (ink-900), borders carry real structure,
+     text gains contrast, and the accent brightens from teal to mint so it
+     reads as "live" against the lighter ground. */
+  --ink-900: #121724;   /* window base (deep slate, lifted from #0E1116) */
+  --ink-800: #1B2233;   /* panel surface — visibly raised above the base */
+  --ink-700: #242D42;   /* input / hover */
+  --ink-600: #33405C;   /* borders — now strong enough to read as structure */
+  --ink-500: #44516F;   /* softer border / divider tint */
+  --mist:    #8A97B0;   /* secondary text (lifted, cooler grey) */
+  --frost:   #DEE5F2;   /* primary text (brighter, more legible) */
+  --signal:  #4ADE9E;   /* ONE accent: mint — data flowing (brighter, more saturated) */
   --amber:   #E8A33D;   /* warning (e.g. unauthorized) */
   --vermilion: #E5564E; /* danger (delete only) */
+
+  /* ===== Selection — the fix =====
+     A selected file is the thing about to be pushed/pulled, so it must read
+     as unmistakably chosen: an inset accent rail on the left + an accent-tinted
+     fill across the row + lifted text. Hover stays a quiet surface tint, so the
+     two never blur together. */
+  --select-tint: rgba(74, 222, 158, 0.16);
+  --select-tint-hover: rgba(74, 222, 158, 0.22);
 
   /* ===== Type scale ===== */
   --font-sans: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, sans-serif;

@@ -138,6 +138,22 @@
 }
 .telem-pct { width: 48px; text-align: right; font-size: var(--fs-xs); color: var(--frost); }
 .telem-cancel { padding: 2px var(--space-2); font-size: var(--fs-xs); }
+/* × on a finished row: a quiet glyph that matches the cancel button's
+   footprint so the row height doesn't shift when a task goes active → done.
+   Sits where the cancel button was, so the eye doesn't jump. */
+.telem-close {
+  padding: 0 var(--space-2);
+  font-size: var(--fs-md);
+  line-height: 1;
+  color: var(--mist);
+  background: transparent;
+  border-color: transparent;
+}
+.telem-close:hover:not(:disabled) {
+  color: var(--frost);
+  background: var(--ink-600);
+  border-color: var(--ink-500);
+}
 
 /* ===== Actions bar ===== */
 .actions {

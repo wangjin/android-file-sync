@@ -15,11 +15,36 @@ body {
   user-select: none;
 }
 
+/* Subtle vertical gradient lifts the window off dead-black at the top, where
+   the toolbar lives, then settles into the base. Barely-there, not a banner. */
+body {
+  background:
+    linear-gradient(180deg, var(--ink-800) 0%, var(--ink-900) 220px),
+    var(--ink-900);
+  background-attachment: fixed;
+}
+
 /* Monospace is earned: paths, permission bits, sizes, telemetry */
 .mono {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
 }
+
+/* Custom scrollbars — the dark theme's hairline bars were nearly invisible
+   against ink-900. Match the surface so they read as part of the chrome. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--ink-600) transparent;
+}
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background: var(--ink-600);
+  border-radius: 5px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-thumb:hover { background: var(--ink-500); background-clip: content-box; }
 
 /* Keyboard focus is visible — part of the quality floor */
 :focus-visible {
@@ -37,9 +62,10 @@ button {
   border-radius: var(--radius-sm);
   padding: var(--space-2) var(--space-3);
   cursor: pointer;
-  transition: background 120ms ease, border-color 120ms ease;
+  transition: background 120ms ease, border-color 120ms ease, transform 120ms ease;
 }
-button:hover:not(:disabled) { background: var(--ink-600); }
+button:hover:not(:disabled) { background: var(--ink-600); border-color: var(--ink-500); }
+button:active:not(:disabled) { transform: translateY(1px); }
 button:disabled { opacity: 0.4; cursor: not-allowed; }
 
 /* Signature accent button — used sparingly (e.g. primary connect) */
@@ -49,7 +75,7 @@ button.primary {
   border-color: var(--signal);
   font-weight: var(--fw-semibold);
 }
-button.primary:hover:not(:disabled) { filter: brightness(1.08); }
+button.primary:hover:not(:disabled) { filter: brightness(1.08); border-color: var(--signal); }
 
 /* Danger button — vermilion, used only for destructive confirmations */
 button.danger {
@@ -58,7 +84,7 @@ button.danger {
   border-color: var(--vermilion);
   font-weight: var(--fw-semibold);
 }
-button.danger:hover:not(:disabled) { filter: brightness(1.08); }
+button.danger:hover:not(:disabled) { filter: brightness(1.08); border-color: var(--vermilion); }
 
 input, select {
   font-family: var(--font-sans);
@@ -69,7 +95,11 @@ input, select {
   border-radius: var(--radius-sm);
   padding: var(--space-2) var(--space-3);
 }
+input:focus, select:focus { border-color: var(--signal); outline: none; }
 input::placeholder { color: var(--mist); }
+
+/* select dropdown arrow stays visible on the lifted surface */
+select option { background: var(--ink-800); color: var(--frost); }
 
 /* Flow animation freezes when user asks for reduced motion */
 @media (prefers-reduced-motion: reduce) {
