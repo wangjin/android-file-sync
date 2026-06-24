@@ -24,12 +24,43 @@ func (a *App) CheckUpdate() (*update.Info, error) {
 // update:progress events as it goes. On completion it opens the installer and
 // emits update:done; on failure it emits update:error. Runs in a goroutine so
 // the frontend call returns immediately.
+//
+// Starting a new download cancels any in-flight one (tracked on the App) so the
+// user can't launch two concurrent downloads by retrying mid-stream. Each
+// download gets a generation id; only the latest generation reports errors/
+// completion, so a superseded download stays silent.
 func (a *App) DownloadUpdate(url string) error {
+	a.mu.Lock()
+	if a.cancelDownload != nil {
+		a.cancelDownload() // tear down any prior download
+	}
+	ctx, cancel := context.WithCancel(a.ctx)
+	a.downloadGen++
+	gen := a.downloadGen
+	a.cancelDownload = cancel
+	a.mu.Unlock()
+
 	go func() {
-		path, err := update.Download(a.ctx, url, func(p update.Progress) {
+		defer cancel()
+
+		path, err := update.Download(ctx, url, func(p update.Progress) {
 			application.Get().Event.Emit("update:progress", p)
 		})
+
+		// Determine whether we are still the active download. If a newer one
+		// started, stay silent — its goroutine owns the UI now. Only the latest
+		// generation (by counter, not by func identity) clears the cancel func.
+		a.mu.Lock()
+		stillActive := a.downloadGen == gen
+		if stillActive {
+			a.cancelDownload = nil
+		}
+		a.mu.Unlock()
+
 		if err != nil {
+			if ctx.Err() != nil || !stillActive {
+				return // cancelled/superseded — not worth surfacing
+			}
 			log.Printf("update download failed: %v", err)
 			application.Get().Event.Emit("update:error", map[string]any{"message": err.Error()})
 			return

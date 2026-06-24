@@ -27,7 +27,10 @@ func downloadOnce(ctx context.Context, endpoint string, onProgress ProgressFn) (
 	if err != nil {
 		return "", err
 	}
-	client := &http.Client{Timeout: 30 * time.Second}
+	// No overall client Timeout: it is a hard deadline that would cut off a
+	// large installer mid-stream on a slow link. The request's ctx governs
+	// cancellation; a stalled connection surfaces as a read error.
+	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
 		return "", err
@@ -48,6 +51,11 @@ func downloadOnce(ctx context.Context, endpoint string, onProgress ProgressFn) (
 	defer f.Close()
 
 	total := resp.ContentLength
+	// report an immediate 0% so the UI doesn't sit frozen until the first
+	// throttled event (which can be up to 500ms away).
+	if onProgress != nil {
+		onProgress(Progress{Percent: 0, Downloaded: 0, Total: total})
+	}
 	pr := &progressReader{reader: resp.Body, total: total, onProgress: onProgress, last: time.Now()}
 	if _, err := io.Copy(f, pr); err != nil {
 		os.Remove(path)

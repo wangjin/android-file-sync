@@ -18,12 +18,14 @@ import (
 )
 
 type App struct {
-	ctx       context.Context
-	client    *adb.AdbClient
-	queue     *queue.Manager
-	engine    *transfer.Engine
-	cancelDev context.CancelFunc
-	mu        sync.Mutex
+	ctx             context.Context
+	client          *adb.AdbClient
+	queue           *queue.Manager
+	engine          *transfer.Engine
+	cancelDev       context.CancelFunc
+	cancelDownload  context.CancelFunc // cancels an in-flight update download
+	downloadGen     int64              // bumped each DownloadUpdate; identifies the active one
+	mu              sync.Mutex
 }
 
 func NewApp() *App { return &App{} }

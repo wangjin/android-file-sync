@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -55,7 +56,7 @@ func matchAsset(assets []Asset, goos string) string {
 		return ""
 	}
 	for _, a := range assets {
-		if len(a.Name) >= len(suffix) && a.Name[len(a.Name)-len(suffix):] == suffix {
+		if strings.HasSuffix(a.Name, suffix) {
 			return a.DownloadURL
 		}
 	}

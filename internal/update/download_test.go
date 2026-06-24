@@ -71,7 +71,9 @@ func TestDownloadRetriesOnFailure(t *testing.T) {
 }
 
 func TestDownloadAllFail(t *testing.T) {
+	calls := 0
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls++
 		w.WriteHeader(http.StatusInternalServerError)
 	}))
 	defer srv.Close()
@@ -79,5 +81,12 @@ func TestDownloadAllFail(t *testing.T) {
 	_, err := Download(context.Background(), srv.URL, func(Progress) {})
 	if err == nil {
 		t.Fatal("expected error when all attempts fail")
+	}
+	// The proxy endpoint (withProxy) points at a real external host, unreachable
+	// in tests, so only the direct endpoint reaches this server — but it must be
+	// retried once, so we expect at least 2 hits. (The proxy attempts fail at
+	// connection time without contacting the local server.)
+	if calls < 2 {
+		t.Errorf("server called only %d times; want >= 2 (direct endpoint retried)", calls)
 	}
 }
