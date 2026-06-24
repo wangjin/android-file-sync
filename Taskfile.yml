@@ -1,0 +1,164 @@
+version: "3"
+
+vars:
+  APP_NAME: AndroidFS
+  FRONTEND_DIR: frontend
+  BUILD_DIR: build/bin
+  BINDINGS_DIR: frontend/bindings
+  VERSION:
+    sh: git describe --tags --always 2>/dev/null || echo "dev"
+
+env:
+  CGO_ENABLED: 1
+
+tasks:
+  dev:
+    desc: Run in development mode with hot reload
+    cmds:
+      - wails3 dev
+
+  generate:
+    desc: Generate TypeScript bindings from Go services
+    cmds:
+      - wails3 generate bindings -ts -d {{.BINDINGS_DIR}} .
+    sources:
+      - "*.go"
+      - internal/**/*.go
+    generates:
+      - "{{.BINDINGS_DIR}}/**/*.ts"
+
+  frontend:install:
+    desc: Install frontend dependencies
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - npm install
+    sources:
+      - package.json
+      - package-lock.json
+    generates:
+      - node_modules/.package-lock.json
+
+  frontend:build:
+    desc: Build frontend assets
+    deps: [frontend:install, generate]
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - npm run build
+    sources:
+      - src/**/*.{ts,tsx,css}
+      - bindings/**/*.ts
+      - index.html
+      - vite.config.ts
+      - tsconfig.json
+    generates:
+      - dist/index.html
+
+  build:
+    desc: Build binary for current platform
+    deps: [frontend:build]
+    cmds:
+      - go build -ldflags "-X main.version={{.VERSION}}" -o {{.BUILD_DIR}}/{{.APP_NAME}} .
+
+  build:darwin:amd64:
+    deps: [frontend:build]
+    cmds:
+      - GOOS=darwin GOARCH=amd64 go build -ldflags "-X main.version={{.VERSION}}" -o {{.BUILD_DIR}}/{{.APP_NAME}}-darwin-amd64 .
+
+  build:darwin:arm64:
+    deps: [frontend:build]
+    cmds:
+      - GOOS=darwin GOARCH=arm64 go build -ldflags "-X main.version={{.VERSION}}" -o {{.BUILD_DIR}}/{{.APP_NAME}}-darwin-arm64 .
+
+  build:windows:amd64:
+    deps: [frontend:build]
+    cmds:
+      - GOOS=windows GOARCH=amd64 go build -ldflags "-H windowsgui -X main.version={{.VERSION}}" -o {{.BUILD_DIR}}/{{.APP_NAME}}-windows-amd64.exe .
+
+  build:linux:amd64:
+    deps: [frontend:build]
+    cmds:
+      - GOOS=linux GOARCH=amd64 go build -ldflags "-X main.version={{.VERSION}}" -o {{.BUILD_DIR}}/{{.APP_NAME}}-linux-amd64 .
+
+  generate:darwin:icon:
+    internal: true
+    cmds:
+      - mkdir -p /tmp/androidfs-icon.iconset
+      - sips -z 512 512 frontend/src/assets/images/logo.png --out /tmp/androidfs-icon.iconset/icon_512x512.png
+      - mkdir -p build/darwin
+      - iconutil -c icns /tmp/androidfs-icon.iconset -o build/darwin/icons.icns
+    status:
+      - test -f build/darwin/icons.icns
+
+  generate:darwin:plist:
+    internal: true
+    cmds:
+      - mkdir -p build/darwin
+      - |
+        cat > build/darwin/Info.plist << 'EOF'
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+          <key>CFBundleExecutable</key>
+          <string>AndroidFS</string>
+          <key>CFBundleIdentifier</key>
+          <string>com.ieemoo.androidfs</string>
+          <key>CFBundleName</key>
+          <string>AndroidFS</string>
+          <key>CFBundleDisplayName</key>
+          <string>AndroidFS</string>
+          <key>CFBundleVersion</key>
+          <string>{{.VERSION}}</string>
+          <key>CFBundleShortVersionString</key>
+          <string>{{.VERSION}}</string>
+          <key>CFBundleIconFile</key>
+          <string>icons</string>
+          <key>CFBundlePackageType</key>
+          <string>APPL</string>
+          <key>LSMinimumSystemVersion</key>
+          <string>11.0</string>
+          <key>NSHighResolutionCapable</key>
+          <true/>
+        </dict>
+        </plist>
+        EOF
+    status:
+      - test -f build/darwin/Info.plist
+
+  package:darwin:
+    deps: [build, generate:darwin:icon, generate:darwin:plist]
+    cmds:
+      - mkdir -p {{.BUILD_DIR}}/{{.APP_NAME}}.app/Contents/{MacOS,Resources}
+      - cp build/darwin/icons.icns {{.BUILD_DIR}}/{{.APP_NAME}}.app/Contents/Resources
+      - cp {{.BUILD_DIR}}/{{.APP_NAME}} {{.BUILD_DIR}}/{{.APP_NAME}}.app/Contents/MacOS
+      - cp build/darwin/Info.plist {{.BUILD_DIR}}/{{.APP_NAME}}.app/Contents
+      - codesign --force --deep --sign - {{.BUILD_DIR}}/{{.APP_NAME}}.app
+
+  package:windows:
+    deps: [build:windows:amd64]
+    cmds:
+      - echo "Windows binary built at {{.BUILD_DIR}}/{{.APP_NAME}}-windows-amd64.exe"
+
+  test:
+    desc: Run Go tests
+    cmds:
+      - go test ./internal/... -v -race
+
+  test:coverage:
+    cmds:
+      - go test ./internal/... -v -race -coverprofile=coverage.out
+      - go tool cover -html=coverage.out -o coverage.html
+
+  clean:
+    cmds:
+      - rm -rf {{.BUILD_DIR}}
+      - rm -rf {{.FRONTEND_DIR}}/dist
+      - rm -rf {{.FRONTEND_DIR}}/node_modules
+
+  lint:
+    cmds:
+      - go vet ./...
+
+  tidy:
+    cmds:
+      - go mod tidy

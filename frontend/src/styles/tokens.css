@@ -1,0 +1,35 @@
+:root {
+  /* ===== Palette — Precision Instrument ===== */
+  --ink-900: #0E1116;   /* window base (near-black, cool) */
+  --ink-800: #161A21;   /* panel surface */
+  --ink-700: #1F252E;   /* input / hover */
+  --ink-600: #2A313B;   /* borders */
+  --mist:    #8B95A5;   /* secondary text (cool grey) */
+  --frost:   #C7CED9;   /* primary text */
+  --signal:  #38E0C8;   /* ONE accent: data flowing — only this */
+  --amber:   #E8A33D;   /* warning (e.g. unauthorized) */
+  --vermilion: #E5564E; /* danger (delete only) */
+
+  /* ===== Type scale ===== */
+  --font-sans: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: "IBM Plex Mono", "SF Mono", Menlo, monospace;
+  --fs-xs: 11px;
+  --fs-sm: 13px;
+  --fs-md: 14px;
+  --fs-lg: 16px;
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+
+  /* ===== Spacing / radii ===== */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+
+  /* ===== Signature: flow ===== */
+  --flow-duration: 1.4s;
+}

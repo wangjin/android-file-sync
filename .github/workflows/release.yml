@@ -1,0 +1,144 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version tag (e.g. v1.0.0)"
+        required: true
+
+permissions:
+  contents: write
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+      - name: Install Wails Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-4-dev libwebkitgtk-6.0-dev libsoup-3.0-dev
+      - run: go install github.com/go-task/task/v3/cmd/task@latest
+      - run: task test
+
+  build-windows:
+    needs: test
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - uses: actions/cache@v4
+        with:
+          path: ~/go/bin
+          key: go-tools-androidfs-${{ runner.os }}-${{ hashFiles('go.sum') }}
+      - run: go install github.com/wailsapp/wails/v3/cmd/wails3@latest
+      - run: go install github.com/go-task/task/v3/cmd/task@latest
+      - run: task package:windows
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AndroidFS-windows-amd64
+          path: build/bin/AndroidFS-windows-amd64.exe
+
+  build-macos:
+    needs: test
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - uses: actions/cache@v4
+        with:
+          path: ~/go/bin
+          key: go-tools-androidfs-${{ runner.os }}-${{ hashFiles('go.sum') }}
+      - run: go install github.com/wailsapp/wails/v3/cmd/wails3@latest
+      - run: go install github.com/go-task/task/v3/cmd/task@latest
+      - run: task package:darwin
+      - name: Create macOS .dmg
+        run: |
+          mkdir -p /tmp/dmg-content
+          cp -R build/bin/AndroidFS.app /tmp/dmg-content/
+          ln -s /Applications /tmp/dmg-content/Applications
+          hdiutil create -volname "AndroidFS" -srcfolder /tmp/dmg-content -ov -format UDZO build/bin/AndroidFS-macos.dmg
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AndroidFS-macos
+          path: build/bin/AndroidFS-macos.dmg
+
+  release:
+    needs: [build-windows, build-macos]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Generate release notes
+        id: notes
+        run: |
+          PREV_TAG=$(git tag --sort=-version:refname | sed -n '2p')
+          if [ -z "$PREV_TAG" ]; then RANGE="HEAD"; else RANGE="$PREV_TAG..HEAD"; fi
+          {
+            echo "## ✨ 新功能"
+            echo ""
+            git log "$RANGE" --format="- %s" --grep="feat" -i 2>/dev/null || true
+            echo ""
+            echo "## 🐛 修复"
+            echo ""
+            git log "$RANGE" --format="- %s" --grep="fix" -i 2>/dev/null || true
+            echo ""
+            echo "## 📦 下载"
+            echo ""
+            echo "| 平台 | 文件 |"
+            echo "|------|------|"
+            echo "| macOS | \`AndroidFS-macos.dmg\` |"
+            echo "| Windows | \`AndroidFS-windows-amd64.exe\` |"
+            echo ""
+            echo "## 💻 macOS 使用说明"
+            echo ""
+            echo "双击打开 .dmg 文件,将 AndroidFS 拖入 Applications 文件夹即可。"
+            echo "如果提示\"无法打开\"或\"已损坏\",请在终端执行:"
+            echo ""
+            echo '```bash'
+            echo "xattr -cr /path/to/AndroidFS.app"
+            echo '```'
+            echo ""
+            echo "然后即可正常双击打开。"
+          } > /tmp/release-notes.md
+          {
+            echo "body<<RELEASEEOF"
+            cat /tmp/release-notes.md
+            echo "RELEASEEOF"
+          } >> "$GITHUB_OUTPUT"
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.version || github.ref_name }}
+          body: ${{ steps.notes.outputs.body }}
+          files: |
+            artifacts/AndroidFS-windows-amd64/*.exe
+            artifacts/AndroidFS-macos/*.dmg
