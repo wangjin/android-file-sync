@@ -1,7 +1,9 @@
 @import "./styles/tokens.css";
 @import "./styles/base.css";
 
-/* ===== App shell ===== */
+/* ===== App shell =====
+   The panes sit on a subtle inset: the window base shows through the gap,
+   so each panel reads as a raised card floating on it. */
 .app-root { display: flex; flex-direction: column; height: 100%; background: var(--ink-900); }
 
 /* ===== Toolbar ===== */
@@ -9,8 +11,19 @@
   display: flex; align-items: center; gap: var(--space-3);
   padding: var(--space-3) var(--space-4);
   border-bottom: 1px solid var(--ink-600);
+  background: linear-gradient(180deg, var(--ink-800), var(--ink-800) 60%, color-mix(in srgb, var(--ink-800) 80%, var(--ink-900)));
 }
-.brand { font-weight: var(--fw-semibold); font-size: var(--fs-lg); letter-spacing: 0.04em; }
+.brand {
+  font-weight: var(--fw-semibold); font-size: var(--fs-lg);
+  letter-spacing: 0.04em; color: var(--frost);
+}
+.brand::after {
+  /* a single mint dot — the brand's only nod to the accent, ties the
+     wordmark to the live-data color used everywhere else. */
+  content: "";
+  display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--signal); margin-left: 8px; vertical-align: middle;
+}
 .device-select { min-width: 240px; }
 .toolbar-spacer { flex: 1; }
 .warn { color: var(--amber); font-size: var(--fs-xs); }
@@ -23,38 +36,75 @@
 }
 
 /* ===== Panel ===== */
-.panel { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.panel { flex: 1; display: flex; flex-direction: column; min-width: 0; background: var(--ink-800); }
 .panel-head {
   display: flex; align-items: center; gap: var(--space-3);
   padding: var(--space-3) var(--space-4);
   border-bottom: 1px solid var(--ink-700);
 }
-.panel-title { font-weight: var(--fw-medium); font-size: var(--fs-sm); color: var(--mist); width: 48px; }
+.panel-title { font-weight: var(--fw-semibold); font-size: var(--fs-sm); color: var(--mist); width: 48px; letter-spacing: 0.02em; }
 .badge { font-size: var(--fs-xs); color: var(--mist); }
 .panel-body { flex: 1; overflow: auto; padding: var(--space-2) var(--space-3); }
 .panel-error { color: var(--vermilion); padding: var(--space-3); font-size: var(--fs-sm); }
 .panel-empty { padding: var(--space-6); text-align: center; }
 
-/* ===== Rows ===== */
+/* ===== Rows =====
+   position:relative so the selected rail can sit inside the row. */
 .row {
+  position: relative;
   display: flex; align-items: center; gap: var(--space-3);
-  padding: var(--space-1) var(--space-2);
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-3);
   border-radius: var(--radius-sm); cursor: default;
+  border: 1px solid transparent;
+  transition: background 120ms ease, border-color 120ms ease;
 }
-.row:hover { background: var(--ink-800); }
-.row-selected { background: var(--ink-700); }
+.row:hover { background: var(--ink-700); }
+/* THE SELECTION FIX: left accent rail + tinted fill + lifted text.
+   The rail uses a negative offset so it kisses the panel padding edge and
+   reads as a tab marker, the way a chosen tape does on a mixing desk. */
+.row-selected {
+  background: var(--select-tint);
+  border-color: color-mix(in srgb, var(--signal) 35%, transparent);
+}
+.row-selected::before {
+  content: "";
+  position: absolute; left: 0; top: 4px; bottom: 4px;
+  width: 3px; border-radius: 0 2px 2px 0;
+  background: var(--signal);
+}
+.row-selected:hover { background: var(--select-tint-hover); }
+.row-selected .row-name { color: #fff; }
+.row-selected .row-icon { color: var(--signal); }
+
 .row-icon { width: 16px; color: var(--mist); font-size: var(--fs-sm); }
 .row-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--frost); }
 .row-link { color: var(--mist); font-size: var(--fs-xs); }
 .row-size { width: 92px; text-align: right; color: var(--mist); font-size: var(--fs-xs); }
 
-/* ===== Path breadcrumb ===== */
-.crumbs { flex: 1; cursor: text; color: var(--mist); font-size: var(--fs-sm); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* ===== Path breadcrumb =====
+   The breadcrumb is a block that swaps in an <input> on click. The input
+   carries 8px vertical padding + a 1px border (see `input` in base.css), so it
+   is taller than a bare text line. Without matching that box, the header row
+   grows on edit and shoves the file list down — then snaps back up on blur.
+   So the breadcrumb adopts the SAME box: identical padding + a transparent
+   border. The two states are then pixel-identical in height, and the path text
+   no longer jumps horizontally either (both inset 12px). */
+.crumbs {
+  flex: 1; min-width: 0;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  cursor: text; color: var(--mist); font-size: var(--fs-sm);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
 .crumb { color: var(--signal); cursor: pointer; }
-.crumb-sep { margin: 0 2px; color: var(--ink-600); }
-.path-input { flex: 1; }
+.crumb:hover { text-decoration: underline; }
+.crumb-sep { margin: 0 2px; color: var(--ink-500); }
+.path-input { flex: 1; min-width: 0; }
 
-/* ===== Telemetry — the signature ===== */
+/* ===== Telemetry — the signature =====
+   Lifted surface, and the flow bar now carries the accent glow at its head so
+   "data is moving" is felt, not just read. */
 .telemetry {
   border-top: 1px solid var(--ink-600);
   max-height: 200px; overflow: auto;
@@ -80,6 +130,7 @@
   background: var(--signal);
   background-size: 200% 100%;
   animation: flow var(--flow-duration) linear infinite;
+  box-shadow: 0 0 8px color-mix(in srgb, var(--signal) 60%, transparent);
 }
 @keyframes flow {
   0%   { background-position: 0% 0; }
@@ -105,9 +156,9 @@
 /* ===== Dialog ===== */
 .overlay {
   position: fixed; inset: 0;
-  background: rgba(0, 0, 0, 0.55);
+  background: rgba(8, 11, 18, 0.6);
   display: flex; align-items: center; justify-content: center;
-  backdrop-filter: blur(2px);
+  backdrop-filter: blur(3px);
 }
 .dialog {
   background: var(--ink-800);
@@ -115,7 +166,7 @@
   border-radius: var(--radius-md);
   padding: var(--space-6);
   width: 360px;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.55);
 }
 .dialog-title { margin: 0 0 var(--space-4); font-size: var(--fs-lg); font-weight: var(--fw-semibold); }
 .dialog-input { width: 100%; }
@@ -145,7 +196,7 @@
   cursor: pointer;
   text-align: left;
 }
-.sort-cell:hover { color: var(--frost); background: var(--ink-800); border-radius: var(--radius-sm); }
+.sort-cell:hover { color: var(--frost); background: var(--ink-700); border-radius: var(--radius-sm); }
 .sort-name { flex: 1; }
 .sort-size { width: 92px; text-align: right; }
 .sort-time { width: 120px; text-align: right; }
@@ -162,12 +213,12 @@
   border: 1px solid var(--ink-600);
   border-radius: var(--radius-md);
   padding: var(--space-1);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
   display: flex;
   flex-direction: column;
 }
 .context-item {
-  /* Override base button: a menu item is flush, left-aligned, full-width */
+  /* Override base button: a menu item is flush, left-align, full-width */
   width: 100%;
   text-align: left;
   justify-content: flex-start;
@@ -179,6 +230,59 @@
 }
 .context-item:hover:not(:disabled) { background: var(--ink-600); }
 .context-danger { color: var(--vermilion); }
+
+/* ===== Toast ===== */
+.toast {
+  position: fixed;
+  bottom: var(--space-6);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--ink-700);
+  border: 1px solid var(--ink-600);
+  color: var(--frost);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: var(--fs-sm);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  z-index: 1100;
+}
+
+/* ===== Version label (toolbar) ===== */
+.version {
+  font-size: var(--fs-xs);
+  color: var(--mist);
+  cursor: pointer;
+  padding: 2px var(--space-1);
+  border-radius: var(--radius-sm);
+  transition: color 120ms ease, background 120ms ease;
+}
+.version:hover { color: var(--frost); background: var(--ink-700); }
+
+/* ===== Update dialog ===== */
+.update-notes {
+  color: var(--mist);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+  max-height: 140px;
+  overflow: auto;
+  margin: 0 0 var(--space-2);
+  white-space: pre-wrap;
+}
+.update-version { color: var(--signal); font-weight: var(--fw-semibold); }
+.update-progress-track {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--ink-900);
+  overflow: hidden;
+  margin-top: var(--space-2);
+}
+.update-progress-fill {
+  height: 100%;
+  background: var(--signal);
+  transition: width 300ms ease;
+}
+.update-pct { font-size: var(--fs-xs); color: var(--mist); margin-top: var(--space-1); }
+.update-error { color: var(--vermilion); font-size: var(--fs-sm); margin-top: var(--space-2); }
 
 /* ===== Disable native text selection on the file grid =====
    File rows are interactive surfaces (click/dbl-click/right-click), not
