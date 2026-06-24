@@ -8,13 +8,28 @@ import (
 	"androidfs/internal/model"
 )
 
-// ListDir lists one directory on the device using `adb shell ls -la`.
+// ListDir lists one directory on the device using `adb shell ls -la`. Dotfiles
+// (names beginning with ".") are dropped, matching the local pane — on Android
+// these are config/cache dirs (.thumbnails, .AndroidSecure, …) that clutter
+// the view. ParseListing itself stays general so Stat/RemoteSize can still
+// resolve hidden paths (e.g. symlink targets) when needed.
 func (c *AdbClient) ListDir(ctx context.Context, serial, dir string) ([]model.FileEntry, error) {
 	out, err := c.Shell(ctx, serial, "ls -la "+quoteArg(dir))
 	if err != nil {
 		return nil, fmt.Errorf("list %s: %w", dir, err)
 	}
-	return ParseListing(dir, out)
+	entries, err := ParseListing(dir, out)
+	if err != nil {
+		return nil, err
+	}
+	filtered := entries[:0]
+	for _, e := range entries {
+		if strings.HasPrefix(e.Name, ".") {
+			continue
+		}
+		filtered = append(filtered, e)
+	}
+	return filtered, nil
 }
 
 // Stat returns a single entry, or nil if not found.

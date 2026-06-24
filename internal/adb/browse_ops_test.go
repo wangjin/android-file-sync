@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 )
 
@@ -15,11 +16,15 @@ func TestListDirViaShell(t *testing.T) {
 	// Fake adb matches on the device shell command. `Shell` calls
 	// `adb -s <serial> shell ls -la '<dir>'`, so the args contain
 	// "-s dev1 shell ls -la '/sdcard'". Match the substring robustly.
+	// The listing intentionally includes dotfiles (.thumbnails dir, .hidden
+	// file) to assert they are filtered from the user-facing list.
 	body := `case "$*" in
   *"shell ls -la '/sdcard'"*)
     echo 'total 8'
     echo 'drwxrwx--x 2 root root 4096 2026-06-20 13:00 DCIM'
     echo '-rw-rw---- 1 root root  100 2026-06-20 13:01 a.txt'
+    echo 'drwxrwx--x 2 root root 4096 2026-06-20 13:02 .thumbnails'
+    echo '-rw-rw---- 1 root root   42 2026-06-20 13:03 .hidden'
     ;;
 esac
 `
@@ -29,8 +34,18 @@ esac
 	if err != nil {
 		t.Fatal(err)
 	}
+	// Dotfiles (.thumbnails, .hidden) must be dropped — only DCIM and a.txt.
 	if len(entries) != 2 {
-		t.Fatalf("got %d", len(entries))
+		names := make([]string, len(entries))
+		for i, e := range entries {
+			names[i] = e.Name
+		}
+		t.Fatalf("got %d entries %v, want 2 (dotfiles not filtered)", len(entries), names)
+	}
+	for _, e := range entries {
+		if strings.HasPrefix(e.Name, ".") {
+			t.Errorf("dotfile leaked into listing: %q", e.Name)
+		}
 	}
 }
 
