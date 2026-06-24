@@ -1,16 +1,25 @@
 import { Device } from '../../bindings/androidfs/internal/model/models.js'
 
-export function Toolbar({ devices, selected, onSelect, onRefresh, onConnect }: {
+export function Toolbar({ devices, selected, onSelect, onRefresh, onConnect, version, onCheckUpdate }: {
   devices: Device[]
   selected: string | null
   onSelect: (s: string) => void
   onRefresh: () => void
   onConnect: () => void
+  version: string
+  onCheckUpdate: () => void
 }) {
   const warn = selected && devices.find(d => d.serial === selected)?.state === 'unauthorized'
   return (
     <header className="toolbar">
       <span className="brand mono">AndroidFS</span>
+      <span
+        className="version mono"
+        title="点击检查更新"
+        onClick={onCheckUpdate}
+      >
+        {version === 'dev' ? 'dev' : version}
+      </span>
       <select className="device-select" value={selected ?? ''} onChange={e => onSelect(e.target.value)}>
         <option value="" disabled>选择设备…</option>
         {devices.map(d => (
