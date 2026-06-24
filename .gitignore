@@ -19,3 +19,6 @@ coverage.html
 # SDD scratch
 .superpowers/sdd/
 .codegraph/
+
+# Task runner cache (regenerated build checksums)
+.task/checksum/
