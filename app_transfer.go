@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"path"
 	"path/filepath"
 	"time"
 
@@ -11,6 +12,8 @@ import (
 )
 
 // PushFiles uploads one or more local files/dirs to remoteDir on the device.
+// Device paths must use "/" as separator on every host, so the destination is
+// joined with path.Join (posix) regardless of the host OS.
 func (a *App) PushFiles(serial string, localPaths []string, remoteDir string) error {
 	for _, lp := range localPaths {
 		task := &model.TransferTask{
@@ -19,7 +22,7 @@ func (a *App) PushFiles(serial string, localPaths []string, remoteDir string) er
 			State:     model.StatePending,
 			FileName:  filepath.Base(lp),
 			SrcPath:   lp,
-			DstPath:   filepath.Join(remoteDir, filepath.Base(lp)),
+			DstPath:   path.Join(remoteDir, filepath.Base(lp)),
 			Serial:    serial,
 			CreatedAt: time.Now(),
 		}
@@ -30,6 +33,7 @@ func (a *App) PushFiles(serial string, localPaths []string, remoteDir string) er
 }
 
 // PullFiles downloads one or more remote files/dirs to localDir on the host.
+// The destination is a host path, so filepath.Join (host separator) is correct.
 func (a *App) PullFiles(serial string, remotePaths []string, localDir string) error {
 	for _, rp := range remotePaths {
 		task := &model.TransferTask{
@@ -61,4 +65,8 @@ func (a *App) runTask(task *model.TransferTask) {
 	a.engine.Run(ctx, task, func(t *model.TransferTask) {
 		a.queue.UpdateProgress(t.ID, t.Bytes, t.Speed)
 	})
+	// engine.Run mutates task.State/Task.Error in place; propagate the final
+	// state (done/failed/cancelled) and any error back into the queue so the
+	// frontend sees the outcome via the task:changed event.
+	a.queue.SetResult(task.ID, task.State, task.Error)
 }

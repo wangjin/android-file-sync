@@ -36,3 +36,22 @@ func TestUpdateProgressNotifies(t *testing.T) {
 		t.Fatalf("bytes=%d", task.Bytes)
 	}
 }
+
+func TestSetResult(t *testing.T) {
+	m := NewManager(2)
+	m.Add(&model.TransferTask{ID: "t4", State: model.StateActive})
+	got := make(chan *model.TransferTask, 1)
+	m.SetCallback(func(task *model.TransferTask) { got <- task })
+	m.SetResult("t4", model.StateFailed, "permission denied")
+	task := <-got
+	if task.State != model.StateFailed {
+		t.Fatalf("state=%v want failed", task.State)
+	}
+	if task.Error != "permission denied" {
+		t.Fatalf("error=%q", task.Error)
+	}
+	// The stored task must carry the result too.
+	if m.Get("t4").State != model.StateFailed {
+		t.Fatal("stored task state not updated")
+	}
+}

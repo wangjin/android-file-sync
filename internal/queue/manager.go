@@ -78,6 +78,22 @@ func (m *Manager) UpdateState(id string, state model.TransferState) {
 	}
 }
 
+// SetResult records a task's terminal state and error message, used after the
+// engine finishes running it. Unlike UpdateProgress it writes under the write
+// lock since State and Error are mutable outcome fields.
+func (m *Manager) SetResult(id string, state model.TransferState, errMsg string) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for _, t := range m.tasks {
+		if t.ID == id {
+			t.State = state
+			t.Error = errMsg
+			m.notify(t)
+			return
+		}
+	}
+}
+
 func (m *Manager) UpdateProgress(id string, bytes int64, speed float64) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()

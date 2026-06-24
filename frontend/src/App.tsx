@@ -23,9 +23,12 @@ export default function App() {
   const [deviceSelected, setDeviceSelected] = useState<string | null>(null)
 
   useEffect(() => {
-    const cancel = Events.On('files-dropped', (ev: any) => {
+    const cancel = Events.On('files-dropped', async (ev: any) => {
       const files: string[] = ev.data?.files ?? []
-      if (serial && device.path) PushFiles(serial, files, device.path)
+      if (serial && device.path) {
+        await PushFiles(serial, files, device.path)
+        device.refresh()
+      }
     })
     return () => { cancel() }
   }, [serial, device.path])
@@ -39,10 +42,12 @@ export default function App() {
   const pushSelected = async () => {
     if (!serial || !localSelected) return
     await PushFiles(serial, [localSelected], device.path)
+    device.refresh()
   }
   const pullSelected = async () => {
     if (!serial || !deviceSelected) return
     await PullFiles(serial, [deviceSelected], local.root || '~/Downloads')
+    local.refresh()
   }
 
   return (
