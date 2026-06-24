@@ -48,6 +48,10 @@ func (a *App) ServiceStartup(ctx context.Context, options application.ServiceOpt
 	devCtx, cancel := context.WithCancel(ctx)
 	a.cancelDev = cancel
 	go a.pollDevices(devCtx)
+
+	// Auto-check for updates 3s after startup, off the critical launch path.
+	// adb setup and device polling have already begun by then.
+	time.AfterFunc(3*time.Second, func() { a.autoCheck(devCtx) })
 	return nil
 }
 

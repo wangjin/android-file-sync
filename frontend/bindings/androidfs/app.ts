@@ -8,12 +8,26 @@ import { Call as $Call, CancellablePromise as $CancellablePromise, Create as $Cr
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
 import * as model$0 from "./internal/model/models.js";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore: Unused imports
+import * as update$0 from "./internal/update/models.js";
 
 /**
  * CancelTask cancels a queued or active task.
  */
 export function CancelTask(id: string): $CancellablePromise<void> {
     return $Call.ByID(840985698, id);
+}
+
+/**
+ * CheckUpdate queries GitHub for the latest release and returns whether a newer
+ * version exists. The frontend uses this for manual checks; the startup auto-
+ * check calls it via autoCheck (below) and emits update:available.
+ */
+export function CheckUpdate(): $CancellablePromise<update$0.Info | null> {
+    return $Call.ByID(586574094).then(($result: any) => {
+        return $$createType1($result);
+    });
 }
 
 /**
@@ -38,11 +52,21 @@ export function DeleteLocal(path: string): $CancellablePromise<void> {
 }
 
 /**
+ * DownloadUpdate downloads the given GitHub asset URL to a temp file, emitting
+ * update:progress events as it goes. On completion it opens the installer and
+ * emits update:done; on failure it emits update:error. Runs in a goroutine so
+ * the frontend call returns immediately.
+ */
+export function DownloadUpdate(url: string): $CancellablePromise<void> {
+    return $Call.ByID(115027584, url);
+}
+
+/**
  * GetDevices returns currently attached devices.
  */
 export function GetDevices(): $CancellablePromise<model$0.Device[]> {
     return $Call.ByID(2647233474).then(($result: any) => {
-        return $$createType1($result);
+        return $$createType3($result);
     });
 }
 
@@ -51,7 +75,7 @@ export function GetDevices(): $CancellablePromise<model$0.Device[]> {
  */
 export function GetTasks(): $CancellablePromise<(model$0.TransferTask | null)[]> {
     return $Call.ByID(4294202735).then(($result: any) => {
-        return $$createType4($result);
+        return $$createType6($result);
     });
 }
 
@@ -67,7 +91,7 @@ export function HomePath(): $CancellablePromise<string> {
  */
 export function ListDir(serial: string, path: string): $CancellablePromise<model$0.FileEntry[]> {
     return $Call.ByID(2120475736, serial, path).then(($result: any) => {
-        return $$createType6($result);
+        return $$createType8($result);
     });
 }
 
@@ -77,7 +101,7 @@ export function ListDir(serial: string, path: string): $CancellablePromise<model
  */
 export function ListLocalDir(dir: string): $CancellablePromise<model$0.FileEntry[]> {
     return $Call.ByID(827505715, dir).then(($result: any) => {
-        return $$createType6($result);
+        return $$createType8($result);
     });
 }
 
@@ -112,11 +136,21 @@ export function Rename(serial: string, oldPath: string, newPath: string): $Cance
     return $Call.ByID(3432540379, serial, oldPath, newPath);
 }
 
+/**
+ * Version returns the running application version (injected at build time, or
+ * "dev" in development).
+ */
+export function Version(): $CancellablePromise<string> {
+    return $Call.ByID(2431199839);
+}
+
 // Private type creation functions
-const $$createType0 = model$0.Device.createFrom;
-const $$createType1 = $Create.Array($$createType0);
-const $$createType2 = model$0.TransferTask.createFrom;
-const $$createType3 = $Create.Nullable($$createType2);
-const $$createType4 = $Create.Array($$createType3);
-const $$createType5 = model$0.FileEntry.createFrom;
+const $$createType0 = update$0.Info.createFrom;
+const $$createType1 = $Create.Nullable($$createType0);
+const $$createType2 = model$0.Device.createFrom;
+const $$createType3 = $Create.Array($$createType2);
+const $$createType4 = model$0.TransferTask.createFrom;
+const $$createType5 = $Create.Nullable($$createType4);
 const $$createType6 = $Create.Array($$createType5);
+const $$createType7 = model$0.FileEntry.createFrom;
+const $$createType8 = $Create.Array($$createType7);
