@@ -13,15 +13,12 @@ on:
 permissions:
   contents: write
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
         with:
           go-version: "1.26"
       - name: Install Wails Linux dependencies
@@ -35,23 +32,23 @@ jobs:
     needs: test
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
         with:
           go-version: "1.26"
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: "22"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         with:
           path: ~/go/bin
           key: go-tools-androidfs-${{ runner.os }}-${{ hashFiles('go.sum') }}
       - run: go install github.com/wailsapp/wails/v3/cmd/wails3@latest
       - run: go install github.com/go-task/task/v3/cmd/task@latest
       - run: task package:windows
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: AndroidFS-windows-amd64
           path: build/bin/AndroidFS-windows-amd64.exe
@@ -60,16 +57,16 @@ jobs:
     needs: test
     runs-on: macos-26
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
         with:
           go-version: "1.26"
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: "22"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         with:
           path: ~/go/bin
           key: go-tools-androidfs-${{ runner.os }}-${{ hashFiles('go.sum') }}
@@ -82,7 +79,7 @@ jobs:
           cp -R build/bin/AndroidFS.app /tmp/dmg-content/
           ln -s /Applications /tmp/dmg-content/Applications
           hdiutil create -volname "AndroidFS" -srcfolder /tmp/dmg-content -ov -format UDZO build/bin/AndroidFS-macos.dmg
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: AndroidFS-macos
           path: build/bin/AndroidFS-macos.dmg
@@ -91,10 +88,10 @@ jobs:
     needs: [build-windows, build-macos]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           path: artifacts
       - name: Generate release notes
