@@ -13,6 +13,10 @@ import { ConnectDialog } from './components/ConnectDialog'
 import { ConfirmDialog } from './components/ConfirmDialog'
 import { ContextMenu, MenuItem } from './components/ContextMenu'
 import { EmptyState } from './components/EmptyState'
+import { Toast } from './components/Toast'
+import { UpdateDialog } from './components/UpdateDialog'
+import { useUpdate } from './hooks/useUpdate'
+import { Version } from '../bindings/androidfs/app.js'
 
 // A pending context menu: which side it opened on, and the cursor position.
 interface MenuState { side: 'local' | 'device'; entry: FileEntry; x: number; y: number }
@@ -24,6 +28,10 @@ export default function App() {
   const [serial, setSerial] = useState<string | null>(null)
   const [showConnect, setShowConnect] = useState(false)
   const device = useDeviceBrowser(serial)
+
+  const update = useUpdate()
+  const [appVersion, setAppVersion] = useState('dev')
+  useEffect(() => { Version().then(setAppVersion) }, [])
 
   const [localSelected, setLocalSelected] = useState<string | null>(null)
   const [deviceSelected, setDeviceSelected] = useState<string | null>(null)
@@ -123,6 +131,8 @@ export default function App() {
         onSelect={setSerial}
         onRefresh={() => (serial ? device.refresh() : location.reload())}
         onConnect={() => setShowConnect(true)}
+        version={appVersion}
+        onCheckUpdate={update.checkNow}
       />
 
       {!serial ? (
@@ -155,6 +165,10 @@ export default function App() {
         onConfirm={confirmDelete}
         onCancel={() => setPendingDelete(null)}
       />
+      {update.info && (
+        <UpdateDialog info={update.info} onClose={update.dismissInfo} />
+      )}
+      <Toast message={update.toast} />
     </div>
   )
 }
