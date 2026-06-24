@@ -56,6 +56,11 @@ export function DeleteLocal(path: string): $CancellablePromise<void> {
  * update:progress events as it goes. On completion it opens the installer and
  * emits update:done; on failure it emits update:error. Runs in a goroutine so
  * the frontend call returns immediately.
+ * 
+ * Starting a new download cancels any in-flight one (tracked on the App) so the
+ * user can't launch two concurrent downloads by retrying mid-stream. Each
+ * download gets a generation id; only the latest generation reports errors/
+ * completion, so a superseded download stays silent.
  */
 export function DownloadUpdate(url: string): $CancellablePromise<void> {
     return $Call.ByID(115027584, url);
