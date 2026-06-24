@@ -10,6 +10,8 @@ import (
 
 // ListDir reads a host directory and returns its entries as FileEntry values
 // (the same shape the device pane uses), so both panes render identically.
+// Dotfiles (names beginning with ".") are skipped: on the host these are
+// config/cache files the user does not want cluttering the local pane.
 func ListDir(dir string) ([]model.FileEntry, error) {
 	infos, err := os.ReadDir(dir)
 	if err != nil {
@@ -17,6 +19,9 @@ func ListDir(dir string) ([]model.FileEntry, error) {
 	}
 	entries := make([]model.FileEntry, 0, len(infos))
 	for _, info := range infos {
+		if strings.HasPrefix(info.Name(), ".") {
+			continue
+		}
 		entries = append(entries, entryFromDirEntry(dir, info))
 	}
 	return entries, nil

@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 )
 
@@ -52,6 +53,31 @@ func TestListDirNotFound(t *testing.T) {
 	_, err := ListDir(missing)
 	if err == nil {
 		t.Fatal("expected error for missing dir")
+	}
+}
+
+func TestListDirHidesDotfiles(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "visible.txt"), []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, ".hidden"), []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Mkdir(filepath.Join(dir, ".cache"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	entries, err := ListDir(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, e := range entries {
+		if strings.HasPrefix(e.Name, ".") {
+			t.Errorf("dotfile leaked into listing: %q", e.Name)
+		}
+	}
+	if len(entries) != 1 || entries[0].Name != "visible.txt" {
+		t.Fatalf("expected only visible.txt, got %+v", entries)
 	}
 }
 
