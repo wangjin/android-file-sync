@@ -5,12 +5,17 @@ import { useDeviceBrowser } from './hooks/useDeviceBrowser'
 import { useLocalBrowser } from './hooks/useLocalBrowser'
 import { useTransfers } from './hooks/useTransfers'
 import { PushFiles, PullFiles, Delete, DeleteLocal } from '../bindings/androidfs/app.js'
+import { FileEntry } from '../bindings/androidfs/internal/model/models.js'
 import { Toolbar } from './components/Toolbar'
 import { FilePanel } from './components/FilePanel'
 import { TransferTelemetry } from './components/TransferTelemetry'
 import { ConnectDialog } from './components/ConnectDialog'
 import { ConfirmDialog } from './components/ConfirmDialog'
+import { ContextMenu, MenuItem } from './components/ContextMenu'
 import { EmptyState } from './components/EmptyState'
+
+// A pending context menu: which side it opened on, and the cursor position.
+interface MenuState { side: 'local' | 'device'; entry: FileEntry; x: number; y: number }
 
 export default function App() {
   const { devices } = useDevices()
@@ -23,6 +28,10 @@ export default function App() {
   const [localSelected, setLocalSelected] = useState<string | null>(null)
   const [deviceSelected, setDeviceSelected] = useState<string | null>(null)
 
+  // Right-click context menu + delete confirmation.
+  const [menu, setMenu] = useState<MenuState | null>(null)
+  const [pendingDelete, setPendingDelete] = useState<{ side: 'local' | 'device'; name: string; path: string } | null>(null)
+
   useEffect(() => {
     const cancel = Events.On('files-dropped', async (ev: any) => {
       const files: string[] = ev.data?.files ?? []
@@ -34,12 +43,12 @@ export default function App() {
     return () => { cancel() }
   }, [serial, device.path])
 
-  // Auto-list device dir when a device is chosen or path changes.
   useEffect(() => {
     if (serial) device.refresh()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [serial])
 
+  // ===== Transfers =====
   const pushSelected = async () => {
     if (!serial || !localSelected) return
     await PushFiles(serial, [localSelected], device.path)
@@ -51,19 +60,10 @@ export default function App() {
     local.refresh()
   }
 
-  // Delete confirmation. `pendingDelete` holds which side+path is awaiting the
-  // user's second click; null when the dialog is closed.
-  const [pendingDelete, setPendingDelete] = useState<{ side: 'local' | 'device'; name: string; path: string } | null>(null)
-
-  const requestDeleteLocal = () => {
-    const e = local.entries.find(x => x.path === localSelected)
-    if (e) setPendingDelete({ side: 'local', name: e.name, path: e.path })
+  // ===== Delete (with two-step confirm) =====
+  const requestDelete = (side: 'local' | 'device', entry: FileEntry) => {
+    setPendingDelete({ side, name: entry.name, path: entry.path })
   }
-  const requestDeleteDevice = () => {
-    const e = device.entries.find(x => x.path === deviceSelected)
-    if (e) setPendingDelete({ side: 'device', name: e.name, path: e.path })
-  }
-
   const confirmDelete = async () => {
     if (!pendingDelete) return
     const { side, path } = pendingDelete
@@ -79,6 +79,30 @@ export default function App() {
     }
   }
 
+  // ===== Context menu =====
+  // Local entry: push to device, delete. Device entry: pull to local, delete.
+  const openMenu = (side: 'local' | 'device', entry: FileEntry, e: React.MouseEvent) => {
+    e.preventDefault()
+    if (side === 'local') setLocalSelected(entry.path)
+    else setDeviceSelected(entry.path)
+    setMenu({ side, entry, x: e.clientX, y: e.clientY })
+  }
+
+  function buildMenuItems(side: 'local' | 'device', entry: FileEntry): MenuItem[] {
+    if (side === 'local') {
+      return [
+        { label: '↑ 推送至设备', onSelect: pushSelected, disabled: !serial },
+        { label: '删除', onSelect: () => requestDelete('local', entry), danger: true },
+      ]
+    }
+    return [
+      { label: '↓ 拉取到本地', onSelect: pullSelected, disabled: !serial },
+      { label: '删除', onSelect: () => requestDelete('device', entry), danger: true },
+    ]
+  }
+
+  const menuItems: MenuItem[] = menu ? buildMenuItems(menu.side, menu.entry) : []
+
   return (
     <div className="app-root">
       <Toolbar
@@ -90,27 +114,24 @@ export default function App() {
       />
 
       {!serial ? (
-        <EmptyState message="用 USB 连接设备并开启 USB 调试,或点右上「无线连接」。" />
+        <EmptyState message="用 USB 连接设备并开启 USB 调试,或点右上「无线连接」。右键文件可推送/拉取/删除。" />
       ) : (
         <main className="panes">
           <FilePanel title="本地" path={local.root || '~'} entries={local.entries} loading={local.loading} error={local.error}
-            onNavigate={local.navigate} onOpen={local.enter} selectedPath={localSelected} onSelect={setLocalSelected} />
+            onNavigate={local.navigate} onOpen={local.enter} selectedPath={localSelected} onSelect={setLocalSelected}
+            onRowContextMenu={(entry, e) => openMenu('local', entry, e)} />
           <div className="seam" aria-hidden />
           <FilePanel title="设备" path={device.path} entries={device.entries} loading={device.loading} error={device.error}
-            onNavigate={device.navigate} onOpen={device.enter} selectedPath={deviceSelected} onSelect={setDeviceSelected} />
+            onNavigate={device.navigate} onOpen={device.enter} selectedPath={deviceSelected} onSelect={setDeviceSelected}
+            onRowContextMenu={(entry, e) => openMenu('device', entry, e)} />
         </main>
       )}
 
-      {serial && (
-        <footer className="actions">
-          <button onClick={pushSelected} disabled={!localSelected}>↑ 推送至设备</button>
-          <button onClick={pullSelected} disabled={!deviceSelected}>↓ 拉取到本地</button>
-          <button className="danger" onClick={requestDeleteLocal} disabled={!localSelected}>删除本地</button>
-          <button className="danger" onClick={requestDeleteDevice} disabled={!deviceSelected}>删除设备</button>
-        </footer>
-      )}
-
       <TransferTelemetry tasks={tasks} />
+
+      {menu && (
+        <ContextMenu x={menu.x} y={menu.y} items={menuItems} onClose={() => setMenu(null)} />
+      )}
       <ConnectDialog open={showConnect} onClose={() => setShowConnect(false)} />
       <ConfirmDialog
         open={pendingDelete !== null}

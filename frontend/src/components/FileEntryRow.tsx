@@ -1,16 +1,18 @@
 import { FileEntry } from '../../bindings/androidfs/internal/model/models.js'
 
-export function FileEntryRow({ entry, onOpen, selected, onSelect }: {
+export function FileEntryRow({ entry, onOpen, selected, onSelect, onContextMenu }: {
   entry: FileEntry
   onOpen: () => void
   selected: boolean
   onSelect: () => void
+  onContextMenu: (e: React.MouseEvent) => void
 }) {
   return (
     <div
       className={['row', selected ? 'row-selected' : ''].join(' ')}
       onClick={onSelect}
       onDoubleClick={entry.is_dir ? onOpen : undefined}
+      onContextMenu={onContextMenu}
     >
       <span className="row-icon" aria-hidden>{entry.is_dir ? '▸' : '·'}</span>
       <span className="row-name">
