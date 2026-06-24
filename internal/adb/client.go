@@ -18,6 +18,7 @@ func NewClient(binPath string) *AdbClient {
 // run executes adb with the given args and returns stdout, stderr, error.
 func (c *AdbClient) run(ctx context.Context, args ...string) (string, string, error) {
 	cmd := exec.CommandContext(ctx, c.bin, args...)
+	hideWindow(cmd)
 	var stdout, stderr bytesContainer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
@@ -29,6 +30,7 @@ func (c *AdbClient) run(ctx context.Context, args ...string) (string, string, er
 // push/pull progress). stdout is collected and returned.
 func (c *AdbClient) runStream(ctx context.Context, onLine func(string), args ...string) (string, error) {
 	cmd := exec.CommandContext(ctx, c.bin, args...)
+	hideWindow(cmd)
 	pr, pw := ioPipe()
 	cmd.Stderr = pw
 	var stdout bytesContainer

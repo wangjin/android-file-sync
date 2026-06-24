@@ -65,6 +65,16 @@ export function ListDir(serial: string, path: string): $CancellablePromise<model
 }
 
 /**
+ * ListLocalDir lists a directory on the host machine (the local pane).
+ * Returns the same FileEntry shape as the device pane so both render alike.
+ */
+export function ListLocalDir(dir: string): $CancellablePromise<model$0.FileEntry[]> {
+    return $Call.ByID(827505715, dir).then(($result: any) => {
+        return $$createType6($result);
+    });
+}
+
+/**
  * Mkdir creates a directory on the device.
  */
 export function Mkdir(serial: string, path: string): $CancellablePromise<void> {

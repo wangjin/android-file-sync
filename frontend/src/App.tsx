@@ -59,8 +59,8 @@ export default function App() {
         <EmptyState message="用 USB 连接设备并开启 USB 调试,或点右上「无线连接」。" />
       ) : (
         <main className="panes">
-          <FilePanel title="本地" path={local.root || '~'} entries={[]} loading={false} error={null}
-            onNavigate={() => {}} onOpen={() => {}} selectedPath={localSelected} onSelect={setLocalSelected} />
+          <FilePanel title="本地" path={local.root || '~'} entries={local.entries} loading={local.loading} error={local.error}
+            onNavigate={local.navigate} onOpen={local.enter} selectedPath={localSelected} onSelect={setLocalSelected} />
           <div className="seam" aria-hidden />
           <FilePanel title="设备" path={device.path} entries={device.entries} loading={device.loading} error={device.error}
             onNavigate={device.navigate} onOpen={device.enter} selectedPath={deviceSelected} onSelect={setDeviceSelected} />
