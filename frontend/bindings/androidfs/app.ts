@@ -31,6 +31,13 @@ export function Delete(serial: string, path: string): $CancellablePromise<void> 
 }
 
 /**
+ * DeleteLocal removes a file or directory (recursively) on the host.
+ */
+export function DeleteLocal(path: string): $CancellablePromise<void> {
+    return $Call.ByID(2381255001, path);
+}
+
+/**
  * GetDevices returns currently attached devices.
  */
 export function GetDevices(): $CancellablePromise<model$0.Device[]> {
@@ -83,6 +90,7 @@ export function Mkdir(serial: string, path: string): $CancellablePromise<void> {
 
 /**
  * PullFiles downloads one or more remote files/dirs to localDir on the host.
+ * The destination is a host path, so filepath.Join (host separator) is correct.
  */
 export function PullFiles(serial: string, remotePaths: string[], localDir: string): $CancellablePromise<void> {
     return $Call.ByID(2027259785, serial, remotePaths, localDir);
@@ -90,6 +98,8 @@ export function PullFiles(serial: string, remotePaths: string[], localDir: strin
 
 /**
  * PushFiles uploads one or more local files/dirs to remoteDir on the device.
+ * Device paths must use "/" as separator on every host, so the destination is
+ * joined with path.Join (posix) regardless of the host OS.
  */
 export function PushFiles(serial: string, localPaths: string[], remoteDir: string): $CancellablePromise<void> {
     return $Call.ByID(4180707552, serial, localPaths, remoteDir);

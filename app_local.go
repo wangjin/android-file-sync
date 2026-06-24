@@ -10,3 +10,8 @@ import (
 func (a *App) ListLocalDir(dir string) ([]model.FileEntry, error) {
 	return localfs.ListDir(dir)
 }
+
+// DeleteLocal removes a file or directory (recursively) on the host.
+func (a *App) DeleteLocal(path string) error {
+	return localfs.Remove(path)
+}

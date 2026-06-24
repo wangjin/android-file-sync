@@ -121,6 +121,8 @@
 .dialog-input { width: 100%; }
 .dialog-error { color: var(--vermilion); margin-top: var(--space-2); font-size: var(--fs-sm); }
 .dialog-actions { display: flex; justify-content: flex-end; gap: var(--space-2); margin-top: var(--space-4); }
+.confirm-message { color: var(--frost); font-size: var(--fs-md); line-height: 1.5; margin-bottom: var(--space-2); }
+.confirm-message strong { color: var(--vermilion); }
 
 /* ===== Utility ===== */
 .muted { color: var(--mist); }
