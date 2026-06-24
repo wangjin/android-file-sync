@@ -92,25 +92,25 @@ func cacheDir() (string, error) {
 	return filepath.Join(base, "AndroidFS", "platform-tools"), nil
 }
 
-// ensureAdbBinary returns the path to a usable adb binary. Prefer the embedded
-// platform-tools binary (committed under build/adb/<os>-<arch>/), then the
-// cache dir, then fall back to "adb" on PATH (system-installed).
+// ensureAdbBinary resolves a usable adb binary:
+//  1. a binary committed under build/adb/<os>-<arch>/ (if present),
+//  2. otherwise the auto-downloaded platform-tools in the cache dir,
+//  3. otherwise "adb" on PATH as a last resort.
+//
+// The download happens on first launch; subsequent launches reuse the cache.
+// A download failure is non-fatal — we fall back to PATH adb so the app still
+// starts (e.g. for users who installed platform-tools themselves).
 func ensureAdbBinary() (string, error) {
 	if p := adb.EmbeddedBinary(); p != "adb" && p != "adb.exe" {
 		return p, nil
 	}
 	dir, err := cacheDir()
-	if err != nil {
-		return "adb", nil
+	if err == nil {
+		if p, err := adb.EnsureDownloaded(dir); err == nil {
+			return p, nil
+		} else {
+			log.Printf("auto-download adb failed (%v); falling back to system adb in PATH", err)
+		}
 	}
-	name := "adb"
-	if runtimeGOOS() == "windows" {
-		name = "adb.exe"
-	}
-	p := filepath.Join(dir, name)
-	if _, err := os.Stat(p); err == nil {
-		return p, nil
-	}
-	log.Println("adb binary not yet extracted; falling back to system adb in PATH")
-	return name, nil
+	return "adb", nil
 }
