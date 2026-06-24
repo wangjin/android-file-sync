@@ -92,9 +92,13 @@ func cacheDir() (string, error) {
 	return filepath.Join(base, "AndroidFS", "platform-tools"), nil
 }
 
-// ensureAdbBinary returns the path to a usable adb binary. Prefer the cache
-// dir, then fall back to "adb" on PATH (system-installed).
+// ensureAdbBinary returns the path to a usable adb binary. Prefer the embedded
+// platform-tools binary (committed under build/adb/<os>-<arch>/), then the
+// cache dir, then fall back to "adb" on PATH (system-installed).
 func ensureAdbBinary() (string, error) {
+	if p := adb.EmbeddedBinary(); p != "adb" && p != "adb.exe" {
+		return p, nil
+	}
 	dir, err := cacheDir()
 	if err != nil {
 		return "adb", nil
