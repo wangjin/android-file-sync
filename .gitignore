@@ -1,0 +1,20 @@
+# Dependencies
+frontend/node_modules/
+
+# Build output
+frontend/dist/
+build/bin/
+*.dmg
+
+# Go / test
+coverage.out
+coverage.html
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# SDD scratch
+.superpowers/sdd/
