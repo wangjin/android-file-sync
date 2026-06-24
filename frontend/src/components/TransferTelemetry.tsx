@@ -4,7 +4,14 @@ import { CancelTask } from '../../bindings/androidfs/app.js'
 // The signature element: mid-seam telemetry. When a task is active it lights
 // up --signal and shows live readouts. This is the one memorable thing; the
 // rest stays disciplined.
-export function TransferTelemetry({ tasks }: { tasks: TransferTask[] }) {
+//
+// Finished tasks (done/failed/cancelled) stay long enough to be read, then the
+// hook auto-dismisses them after a delay; a manual × is there for anyone who
+// wants them gone sooner.
+export function TransferTelemetry({ tasks, onDismiss }: {
+  tasks: TransferTask[]
+  onDismiss: (id: string) => void
+}) {
   if (tasks.length === 0) return null
   return (
     <section className="telemetry">
@@ -30,9 +37,16 @@ export function TransferTelemetry({ tasks }: { tasks: TransferTask[] }) {
               />
             </div>
             <span className="telem-pct mono">{pct}%</span>
-            {!terminal && (
+            {active ? (
               <button className="telem-cancel" onClick={() => CancelTask(t.id)}>取消</button>
-            )}
+            ) : terminal ? (
+              <button
+                className="telem-close"
+                title="关闭"
+                aria-label="关闭"
+                onClick={() => onDismiss(t.id)}
+              >×</button>
+            ) : null}
           </div>
         )
       })}

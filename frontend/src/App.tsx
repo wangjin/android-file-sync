@@ -23,7 +23,7 @@ interface MenuState { side: 'local' | 'device'; entry: FileEntry; x: number; y: 
 
 export default function App() {
   const { devices } = useDevices()
-  const { tasks } = useTransfers()
+  const { tasks, dismiss } = useTransfers()
   const local = useLocalBrowser()
   const [serial, setSerial] = useState<string | null>(null)
   const [showConnect, setShowConnect] = useState(false)
@@ -149,7 +149,7 @@ export default function App() {
         </main>
       )}
 
-      <TransferTelemetry tasks={tasks} />
+      <TransferTelemetry tasks={tasks} onDismiss={dismiss} />
 
       {menu && (
         <ContextMenu x={menu.x} y={menu.y} items={menuItems} onClose={() => setMenu(null)} />
