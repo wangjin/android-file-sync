@@ -124,6 +124,32 @@
 .confirm-message { color: var(--frost); font-size: var(--fs-md); line-height: 1.5; margin-bottom: var(--space-2); }
 .confirm-message strong { color: var(--vermilion); }
 
+/* ===== Sort bar (column headers) ===== */
+.sort-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-1) var(--space-4);
+  border-bottom: 1px solid var(--ink-700);
+  color: var(--mist);
+  font-size: var(--fs-xs);
+}
+.sort-cell {
+  /* header chips, not action buttons: flush, borderless, hover-tinted */
+  background: transparent;
+  border: none;
+  color: var(--mist);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  padding: var(--space-1) var(--space-2);
+  cursor: pointer;
+  text-align: left;
+}
+.sort-cell:hover { color: var(--frost); background: var(--ink-800); border-radius: var(--radius-sm); }
+.sort-name { flex: 1; }
+.sort-size { width: 92px; text-align: right; }
+.sort-time { width: 120px; text-align: right; }
+
 /* ===== Utility ===== */
 .muted { color: var(--mist); }
 

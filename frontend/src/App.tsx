@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Events } from '@wailsio/runtime'
 import { useDevices } from './hooks/useDevices'
 import { useDeviceBrowser } from './hooks/useDeviceBrowser'
@@ -35,10 +35,8 @@ export default function App() {
   useEffect(() => {
     const cancel = Events.On('files-dropped', async (ev: any) => {
       const files: string[] = ev.data?.files ?? []
-      if (serial && device.path) {
-        await PushFiles(serial, files, device.path)
-        device.refresh()
-      }
+      // Push is async; the task:done listener re-lists the device pane on finish.
+      if (serial && device.path) await PushFiles(serial, files, device.path)
     })
     return () => { cancel() }
   }, [serial, device.path])
@@ -48,16 +46,30 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [serial])
 
+  // Refresh the affected pane when a transfer actually finishes. Transfers are
+  // async on the backend, so awaiting PushFiles/PullFiles returns before the
+  // copy is done — we listen for the backend's task:done event instead.
+  // Refs hold the latest refresh fns so the subscription runs once.
+  const paneRef = useRef({ local: () => local.refresh(), device: () => device.refresh() })
+  paneRef.current = { local: () => local.refresh(), device: () => device.refresh() }
+  useEffect(() => {
+    const cancel = Events.On('task:done', (ev: any) => {
+      const side: 'local' | 'device' = ev.data?.side
+      if (side === 'local') paneRef.current.local()
+      else if (side === 'device') paneRef.current.device()
+    })
+    return () => { cancel() }
+  }, [])
+
   // ===== Transfers =====
   const pushSelected = async () => {
     if (!serial || !localSelected) return
+    // Refresh happens on task:done, not here — push is async.
     await PushFiles(serial, [localSelected], device.path)
-    device.refresh()
   }
   const pullSelected = async () => {
     if (!serial || !deviceSelected) return
     await PullFiles(serial, [deviceSelected], local.root || '~/Downloads')
-    local.refresh()
   }
 
   // ===== Delete (with two-step confirm) =====
