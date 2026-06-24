@@ -81,13 +81,25 @@ tasks:
 
   generate:darwin:icon:
     internal: true
+    dir: "{{.FRONTEND_DIR}}/src/assets/images"
     cmds:
       - mkdir -p /tmp/androidfs-icon.iconset
-      - sips -z 512 512 frontend/src/assets/images/logo.png --out /tmp/androidfs-icon.iconset/icon_512x512.png
-      - mkdir -p build/darwin
-      - iconutil -c icns /tmp/androidfs-icon.iconset -o build/darwin/icons.icns
+      - >-
+        ICON=$(test -f icon.png && echo icon.png || echo logo.png);
+        sips -z 16 16     "$ICON" --out /tmp/androidfs-icon.iconset/icon_16x16.png;
+        sips -z 32 32     "$ICON" --out /tmp/androidfs-icon.iconset/icon_16x16@2x.png;
+        sips -z 32 32     "$ICON" --out /tmp/androidfs-icon.iconset/icon_32x32.png;
+        sips -z 64 64     "$ICON" --out /tmp/androidfs-icon.iconset/icon_32x32@2x.png;
+        sips -z 128 128   "$ICON" --out /tmp/androidfs-icon.iconset/icon_128x128.png;
+        sips -z 256 256   "$ICON" --out /tmp/androidfs-icon.iconset/icon_128x128@2x.png;
+        sips -z 256 256   "$ICON" --out /tmp/androidfs-icon.iconset/icon_256x256.png;
+        sips -z 512 512   "$ICON" --out /tmp/androidfs-icon.iconset/icon_256x256@2x.png;
+        sips -z 512 512   "$ICON" --out /tmp/androidfs-icon.iconset/icon_512x512.png;
+        sips -z 1024 1024 "$ICON" --out /tmp/androidfs-icon.iconset/icon_512x512@2x.png;
+      - mkdir -p ../../../../build/darwin
+      - iconutil -c icns /tmp/androidfs-icon.iconset -o ../../../../build/darwin/icons.icns
     status:
-      - test -f build/darwin/icons.icns
+      - test -f ../../../../build/darwin/icons.icns
 
   generate:darwin:plist:
     internal: true
