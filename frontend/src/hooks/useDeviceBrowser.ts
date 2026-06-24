@@ -3,7 +3,7 @@ import { ListDir } from '../../bindings/androidfs/app.js'
 import { FileEntry } from '../../bindings/androidfs/internal/model/models.js'
 
 export function useDeviceBrowser(serial: string | null) {
-  const [path, setPath] = useState('/sdcard')
+  const [path, setPath] = useState('/')
   const [entries, setEntries] = useState<FileEntry[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
