@@ -1,0 +1,72 @@
+* { box-sizing: border-box; }
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--ink-900);
+  color: var(--frost);
+  font-family: var(--font-sans);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-regular);
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+
+/* Monospace is earned: paths, permission bits, sizes, telemetry */
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Keyboard focus is visible — part of the quality floor */
+:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 1px;
+}
+
+button {
+  font-family: var(--font-sans);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  color: var(--frost);
+  background: var(--ink-700);
+  border: 1px solid var(--ink-600);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+button:hover:not(:disabled) { background: var(--ink-600); }
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Signature accent button — used sparingly (e.g. primary connect) */
+button.primary {
+  background: var(--signal);
+  color: var(--ink-900);
+  border-color: var(--signal);
+  font-weight: var(--fw-semibold);
+}
+button.primary:hover:not(:disabled) { filter: brightness(1.08); }
+
+input, select {
+  font-family: var(--font-sans);
+  font-size: var(--fs-sm);
+  color: var(--frost);
+  background: var(--ink-900);
+  border: 1px solid var(--ink-600);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+}
+input::placeholder { color: var(--mist); }
+
+/* Flow animation freezes when user asks for reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
