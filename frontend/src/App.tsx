@@ -4,11 +4,12 @@ import { useDevices } from './hooks/useDevices'
 import { useDeviceBrowser } from './hooks/useDeviceBrowser'
 import { useLocalBrowser } from './hooks/useLocalBrowser'
 import { useTransfers } from './hooks/useTransfers'
-import { PushFiles, PullFiles } from '../bindings/androidfs/app.js'
+import { PushFiles, PullFiles, Delete, DeleteLocal } from '../bindings/androidfs/app.js'
 import { Toolbar } from './components/Toolbar'
 import { FilePanel } from './components/FilePanel'
 import { TransferTelemetry } from './components/TransferTelemetry'
 import { ConnectDialog } from './components/ConnectDialog'
+import { ConfirmDialog } from './components/ConfirmDialog'
 import { EmptyState } from './components/EmptyState'
 
 export default function App() {
@@ -50,6 +51,34 @@ export default function App() {
     local.refresh()
   }
 
+  // Delete confirmation. `pendingDelete` holds which side+path is awaiting the
+  // user's second click; null when the dialog is closed.
+  const [pendingDelete, setPendingDelete] = useState<{ side: 'local' | 'device'; name: string; path: string } | null>(null)
+
+  const requestDeleteLocal = () => {
+    const e = local.entries.find(x => x.path === localSelected)
+    if (e) setPendingDelete({ side: 'local', name: e.name, path: e.path })
+  }
+  const requestDeleteDevice = () => {
+    const e = device.entries.find(x => x.path === deviceSelected)
+    if (e) setPendingDelete({ side: 'device', name: e.name, path: e.path })
+  }
+
+  const confirmDelete = async () => {
+    if (!pendingDelete) return
+    const { side, path } = pendingDelete
+    setPendingDelete(null)
+    if (side === 'local') {
+      await DeleteLocal(path)
+      setLocalSelected(null)
+      local.refresh()
+    } else {
+      await Delete(serial!, path)
+      setDeviceSelected(null)
+      device.refresh()
+    }
+  }
+
   return (
     <div className="app-root">
       <Toolbar
@@ -76,11 +105,23 @@ export default function App() {
         <footer className="actions">
           <button onClick={pushSelected} disabled={!localSelected}>↑ 推送至设备</button>
           <button onClick={pullSelected} disabled={!deviceSelected}>↓ 拉取到本地</button>
+          <button className="danger" onClick={requestDeleteLocal} disabled={!localSelected}>删除本地</button>
+          <button className="danger" onClick={requestDeleteDevice} disabled={!deviceSelected}>删除设备</button>
         </footer>
       )}
 
       <TransferTelemetry tasks={tasks} />
       <ConnectDialog open={showConnect} onClose={() => setShowConnect(false)} />
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        title="确认删除"
+        message={pendingDelete ? (
+          <>确定删除 <strong>{pendingDelete.name}</strong>?<br />此操作不可撤销。</>
+        ) : null}
+        confirmLabel="删除"
+        onConfirm={confirmDelete}
+        onCancel={() => setPendingDelete(null)}
+      />
     </div>
   )
 }

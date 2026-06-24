@@ -51,6 +51,15 @@ button.primary {
 }
 button.primary:hover:not(:disabled) { filter: brightness(1.08); }
 
+/* Danger button — vermilion, used only for destructive confirmations */
+button.danger {
+  background: var(--vermilion);
+  color: #fff;
+  border-color: var(--vermilion);
+  font-weight: var(--fw-semibold);
+}
+button.danger:hover:not(:disabled) { filter: brightness(1.08); }
+
 input, select {
   font-family: var(--font-sans);
   font-size: var(--fs-sm);

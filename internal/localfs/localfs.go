@@ -64,3 +64,8 @@ func ParentDir(p string) string {
 	}
 	return parent
 }
+
+// Remove deletes a file or directory (recursively) on the host.
+func Remove(p string) error {
+	return os.RemoveAll(p)
+}
