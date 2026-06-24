@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/wailsapp/wails/v3/pkg/application"
 
 	"androidfs/internal/model"
 )
@@ -69,4 +70,17 @@ func (a *App) runTask(task *model.TransferTask) {
 	// state (done/failed/cancelled) and any error back into the queue so the
 	// frontend sees the outcome via the task:changed event.
 	a.queue.SetResult(task.ID, task.State, task.Error)
+	// On successful completion, tell the frontend which pane changed so it can
+	// re-list it. Pull writes to the host (local pane), push writes to the
+	// device. We only fire on success — a failed transfer changed nothing.
+	if task.State == model.StateDone {
+		side := "device"
+		if task.Direction == model.DirPull {
+			side = "local"
+		}
+		application.Get().Event.Emit("task:done", map[string]any{
+			"side":      side,
+			"direction": task.Direction.String(),
+		})
+	}
 }
