@@ -18,3 +18,4 @@ coverage.html
 
 # SDD scratch
 .superpowers/sdd/
+.codegraph/
