@@ -30,10 +30,19 @@ func TestUpdateProgressNotifies(t *testing.T) {
 	m.Add(&model.TransferTask{ID: "t3", State: model.StateActive, Total: 100})
 	got := make(chan *model.TransferTask, 1)
 	m.SetCallback(func(task *model.TransferTask) { got <- task })
-	m.UpdateProgress("t3", 50, 1)
+	m.UpdateProgress("t3", 50, 4500, 1)
 	task := <-got
 	if task.Bytes != 50 {
 		t.Fatalf("bytes=%d", task.Bytes)
+	}
+	// Total must be propagated: the frontend computes pct = bytes/total, so a
+	// dropped Total shows as 0% for the entire transfer.
+	if task.Total != 4500 {
+		t.Fatalf("total=%d want 4500", task.Total)
+	}
+	// The stored task carries it too (GetTasks / events read from storage).
+	if m.Get("t3").Total != 4500 {
+		t.Fatalf("stored total=%d want 4500", m.Get("t3").Total)
 	}
 }
 

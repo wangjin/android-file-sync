@@ -21,9 +21,12 @@ func NewEngine(client *adb.AdbClient) *Engine {
 // Run executes the task to completion. Progress is reported via onProgress.
 // Returns the final error (nil on success).
 func (e *Engine) Run(ctx context.Context, task *model.TransferTask, onProgress func(*model.TransferTask)) error {
-	progress := func(bytes, total int64) {
+	progress := func(bytes, total, rate int64) {
 		task.Bytes = bytes
 		task.Total = total
+		if rate > 0 {
+			task.Speed = float64(rate)
+		}
 		if onProgress != nil {
 			onProgress(task)
 		}

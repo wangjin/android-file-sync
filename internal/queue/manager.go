@@ -94,12 +94,19 @@ func (m *Manager) SetResult(id string, state model.TransferState, errMsg string)
 	}
 }
 
-func (m *Manager) UpdateProgress(id string, bytes int64, speed float64) {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
+// UpdateProgress records bytes transferred, the total size, and the current
+// speed. total is included because the frontend computes pct = bytes/total —
+// without it the stored Total stays 0 and progress reads as 0% for the whole
+// transfer. We take the write lock: although Total usually settles once adb
+// reports it on the first progress line, writing it concurrently with Bytes
+// under the read lock would race with SetResult/Cancel on the same struct.
+func (m *Manager) UpdateProgress(id string, bytes, total int64, speed float64) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	for _, t := range m.tasks {
 		if t.ID == id {
 			t.Bytes = bytes
+			t.Total = total
 			t.Speed = speed
 			m.notify(t)
 			return

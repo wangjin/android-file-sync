@@ -9,18 +9,33 @@ func TestParseProgress(t *testing.T) {
 		wantTotal int64
 		wantOK    bool
 	}{
-		{"[  8%] /sdcard/x.jpg", 0, 0, false},          // not a push/pull progress line
-		{"1 file pulled, 0 skipped. 3.2 MB/s (4500 bytes in 0.001s)", 0, 0, false},
-		{"1204/4500 (27%)", 1204, 4500, true},
-		{"4500/4500 (100%)", 4500, 4500, true},
+		// adb 37 emits a single summary line per transfer; bytes == total.
+		{"/tmp/a.bin: 1 file pushed, 0 skipped. 14.9 MB/s (2000000 bytes in 0.128s)", 2000000, 2000000, true},
+		{"/sdcard/b: 1 file pulled, 0 skipped. 8.9 MB/s (2000000 bytes in 0.213s)", 2000000, 2000000, true},
+		// Not a transfer summary — must not match.
+		{"[  8%] /sdcard/x.jpg", 0, 0, false},
+		{"1204/4500 (27%)", 0, 0, false}, // legacy format adb no longer emits
 		{"0/0", 0, 0, false},
 	}
 	for _, c := range cases {
-		b, tot, ok := ParseProgress(c.line)
+		b, tot, _, ok := ParseProgress(c.line)
 		if ok != c.wantOK || b != c.wantBytes || tot != c.wantTotal {
 			t.Errorf("ParseProgress(%q) = (%d,%d,%v) want (%d,%d,%v)",
 				c.line, b, tot, ok, c.wantBytes, c.wantTotal, c.wantOK)
 		}
+	}
+}
+
+// TestParseProgressRate checks the average speed is read from the summary line,
+// normalized to bytes/sec.
+func TestParseProgressRate(t *testing.T) {
+	// 14.9 MB/s ≈ 15623782 B/s; assert within rounding tolerance of the token.
+	_, _, rate, ok := ParseProgress("/x: 1 file pushed, 0 skipped. 14.9 MB/s (2000000 bytes in 0.128s)")
+	if !ok {
+		t.Fatal("expected match")
+	}
+	if rate < 14000000 || rate > 16000000 {
+		t.Fatalf("rate=%d want ~14.9MB/s", rate)
 	}
 }
 

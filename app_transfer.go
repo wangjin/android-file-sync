@@ -64,7 +64,7 @@ func (a *App) runTask(task *model.TransferTask) {
 	defer cancel()
 	a.queue.UpdateState(task.ID, model.StateActive)
 	a.engine.Run(ctx, task, func(t *model.TransferTask) {
-		a.queue.UpdateProgress(t.ID, t.Bytes, t.Speed)
+		a.queue.UpdateProgress(t.ID, t.Bytes, t.Total, t.Speed)
 	})
 	// engine.Run mutates task.State/Task.Error in place; propagate the final
 	// state (done/failed/cancelled) and any error back into the queue so the
