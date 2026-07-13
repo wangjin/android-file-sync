@@ -80,6 +80,7 @@
 .row-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--frost); }
 .row-link { color: var(--mist); font-size: var(--fs-xs); }
 .row-size { width: 92px; text-align: right; color: var(--mist); font-size: var(--fs-xs); }
+.row-time { width: 120px; text-align: right; color: var(--mist); font-size: var(--fs-xs); }
 
 /* ===== Path breadcrumb =====
    The breadcrumb is a block that swaps in an <input> on click. The input

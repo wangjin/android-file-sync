@@ -4,13 +4,14 @@ import { useDevices } from './hooks/useDevices'
 import { useDeviceBrowser } from './hooks/useDeviceBrowser'
 import { useLocalBrowser } from './hooks/useLocalBrowser'
 import { useTransfers } from './hooks/useTransfers'
-import { PushFiles, PullFiles, Delete, DeleteLocal } from '../bindings/androidfs/app.js'
+import { PushFiles, PullFiles, Delete, DeleteLocal, Rename, RenameLocal } from '../bindings/androidfs/app.js'
 import { FileEntry } from '../bindings/androidfs/internal/model/models.js'
 import { Toolbar } from './components/Toolbar'
 import { FilePanel } from './components/FilePanel'
 import { TransferTelemetry } from './components/TransferTelemetry'
 import { ConnectDialog } from './components/ConnectDialog'
 import { ConfirmDialog } from './components/ConfirmDialog'
+import { PromptDialog } from './components/PromptDialog'
 import { ContextMenu, MenuItem } from './components/ContextMenu'
 import { EmptyState } from './components/EmptyState'
 import { Toast } from './components/Toast'
@@ -36,9 +37,10 @@ export default function App() {
   const [localSelected, setLocalSelected] = useState<string | null>(null)
   const [deviceSelected, setDeviceSelected] = useState<string | null>(null)
 
-  // Right-click context menu + delete confirmation.
+  // Right-click context menu + delete confirmation + rename prompt.
   const [menu, setMenu] = useState<MenuState | null>(null)
   const [pendingDelete, setPendingDelete] = useState<{ side: 'local' | 'device'; name: string; path: string } | null>(null)
+  const [pendingRename, setPendingRename] = useState<{ side: 'local' | 'device'; entry: FileEntry } | null>(null)
 
   useEffect(() => {
     const cancel = Events.On('files-dropped', async (ev: any) => {
@@ -99,6 +101,29 @@ export default function App() {
     }
   }
 
+  // ===== Rename (prompt for new name; keep it in the same directory) =====
+  const requestRename = (side: 'local' | 'device', entry: FileEntry) => {
+    setPendingRename({ side, entry })
+  }
+  const confirmRename = async (newName: string) => {
+    const p = pendingRename
+    if (!p) return
+    setPendingRename(null)
+    const { entry } = p
+    if (newName === entry.name) return
+    // Replace the basename, keep the parent dir. lastIndexOf includes the "/"
+    // so a root entry like "/foo.txt" keeps parent "/", and "/sdcard/x" → "/sdcard".
+    const slash = entry.path.lastIndexOf('/')
+    const newPath = slash >= 0 ? entry.path.slice(0, slash + 1) + newName : newName
+    if (p.side === 'local') {
+      await RenameLocal(entry.path, newPath)
+      local.refresh()
+    } else {
+      await Rename(serial!, entry.path, newPath)
+      device.refresh()
+    }
+  }
+
   // ===== Context menu =====
   // Local entry: push to device, delete. Device entry: pull to local, delete.
   const openMenu = (side: 'local' | 'device', entry: FileEntry, e: React.MouseEvent) => {
@@ -112,11 +137,13 @@ export default function App() {
     if (side === 'local') {
       return [
         { label: '↑ 推送至设备', onSelect: pushSelected, disabled: !serial },
+        { label: '重命名', onSelect: () => requestRename('local', entry) },
         { label: '删除', onSelect: () => requestDelete('local', entry), danger: true },
       ]
     }
     return [
       { label: '↓ 拉取到本地', onSelect: pullSelected, disabled: !serial },
+      { label: '重命名', onSelect: () => requestRename('device', entry) },
       { label: '删除', onSelect: () => requestDelete('device', entry), danger: true },
     ]
   }
@@ -164,6 +191,14 @@ export default function App() {
         confirmLabel="删除"
         onConfirm={confirmDelete}
         onCancel={() => setPendingDelete(null)}
+      />
+      <PromptDialog
+        open={pendingRename !== null}
+        title="重命名"
+        initialValue={pendingRename?.entry.name ?? ''}
+        confirmLabel="重命名"
+        onConfirm={confirmRename}
+        onCancel={() => setPendingRename(null)}
       />
       {update.info && (
         <UpdateDialog info={update.info} onClose={update.dismissInfo} />

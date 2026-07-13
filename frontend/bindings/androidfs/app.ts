@@ -142,6 +142,13 @@ export function Rename(serial: string, oldPath: string, newPath: string): $Cance
 }
 
 /**
+ * RenameLocal renames (or moves) a file or directory on the host.
+ */
+export function RenameLocal(oldPath: string, newPath: string): $CancellablePromise<void> {
+    return $Call.ByID(473673226, oldPath, newPath);
+}
+
+/**
  * Version returns the running application version (injected at build time, or
  * "dev" in development).
  */

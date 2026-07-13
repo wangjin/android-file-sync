@@ -15,3 +15,8 @@ func (a *App) ListLocalDir(dir string) ([]model.FileEntry, error) {
 func (a *App) DeleteLocal(path string) error {
 	return localfs.Remove(path)
 }
+
+// RenameLocal renames (or moves) a file or directory on the host.
+func (a *App) RenameLocal(oldPath, newPath string) error {
+	return localfs.Rename(oldPath, newPath)
+}

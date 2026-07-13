@@ -74,3 +74,8 @@ func ParentDir(p string) string {
 func Remove(p string) error {
 	return os.RemoveAll(p)
 }
+
+// Rename renames (or moves) a file or directory on the host.
+func Rename(oldPath, newPath string) error {
+	return os.Rename(oldPath, newPath)
+}
