@@ -1,17 +1,25 @@
 import { FileEntry } from '../../bindings/androidfs/internal/model/models.js'
 
-export function FileEntryRow({ entry, onOpen, selected, onSelect, onContextMenu }: {
+// SelectMods reports which modifier keys accompanied a row click. The parent
+// (FilePanel) interprets these into single / toggle / range selection — the
+// row itself stays dumb.
+export interface SelectMods { ctrl: boolean; shift: boolean }
+
+export function FileEntryRow({ entry, onOpen, onPreview, selected, onSelect, onContextMenu }: {
   entry: FileEntry
   onOpen: () => void
+  // onPreview fires on double-click of a non-directory file (e.g. an image).
+  // Directories keep their existing double-click → open behavior.
+  onPreview?: () => void
   selected: boolean
-  onSelect: () => void
+  onSelect: (mods: SelectMods) => void
   onContextMenu: (e: React.MouseEvent) => void
 }) {
   return (
     <div
       className={['row', selected ? 'row-selected' : ''].join(' ')}
-      onClick={onSelect}
-      onDoubleClick={entry.is_dir ? onOpen : undefined}
+      onClick={(e) => onSelect({ ctrl: e.metaKey || e.ctrlKey, shift: e.shiftKey })}
+      onDoubleClick={entry.is_dir ? onOpen : onPreview}
       onContextMenu={onContextMenu}
     >
       <span className="row-icon" aria-hidden>{entry.is_dir ? '▸' : '·'}</span>
