@@ -1,7 +1,9 @@
 package adb
 
 import (
+	"bytes"
 	"context"
+	"fmt"
 	"os/exec"
 )
 
@@ -52,4 +54,23 @@ func (c *AdbClient) runStream(ctx context.Context, onLine func(string), args ...
 // RunVersion runs `adb version` as a startup health check.
 func (c *AdbClient) RunVersion(ctx context.Context) (string, string, error) {
 	return c.run(ctx, "version")
+}
+
+// ExecOut runs `adb -s <serial> exec-out <command>` and returns the raw stdout
+// bytes. exec-out is binary-safe — unlike `adb shell`, it does NOT translate
+// LF→CRLF — so it is the right channel for pulling image bytes via cat. On a
+// non-zero exit the captured stderr is folded into the returned error.
+func (c *AdbClient) ExecOut(ctx context.Context, serial, command string) ([]byte, error) {
+	cmd := exec.CommandContext(ctx, c.bin, "-s", serial, "exec-out", command)
+	hideWindow(cmd)
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+	out, err := cmd.Output()
+	if err != nil {
+		if msg := bytes.TrimSpace(stderr.Bytes()); len(msg) > 0 {
+			return nil, fmt.Errorf("%s: %s", err, msg)
+		}
+		return nil, err
+	}
+	return out, nil
 }

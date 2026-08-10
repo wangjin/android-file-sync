@@ -135,6 +135,30 @@ export function PushFiles(serial: string, localPaths: string[], remoteDir: strin
 }
 
 /**
+ * ReadImage pulls a device image's raw bytes for in-app preview (no local
+ * download). Returns (bytes, mime, error). Files over the size cap are
+ * rejected. See adb.ReadImage for details.
+ */
+export function ReadImage(serial: string, path: string): $CancellablePromise<[string, string]> {
+    return $Call.ByID(91073490, serial, path).then(($result: any) => {
+        $result[0] = $Create.ByteSlice($result[0]);
+        return $result;
+    });
+}
+
+/**
+ * ReadLocalImage reads up to adb.MaxImageBytes of a host image file's raw
+ * bytes for in-app preview. Returns (bytes, mime, error). Files over the cap
+ * are rejected so the frontend can show a friendly message instead.
+ */
+export function ReadLocalImage(path: string): $CancellablePromise<[string, string]> {
+    return $Call.ByID(4020051437, path).then(($result: any) => {
+        $result[0] = $Create.ByteSlice($result[0]);
+        return $result;
+    });
+}
+
+/**
  * Rename renames a path on the device.
  */
 export function Rename(serial: string, oldPath: string, newPath: string): $CancellablePromise<void> {
