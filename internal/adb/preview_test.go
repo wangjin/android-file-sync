@@ -94,13 +94,18 @@ func itoa(n int64) string {
 //
 // Dispatch is on $3: real args are "-s <serial> <subcommand> <rest>", so
 // $3 is "shell" or "exec-out".
+//
+// NOTE: byte escapes are OCTAL (\211 = 0x89), not \xNN. Ubuntu's /bin/sh is
+// dash, whose printf does not support \xNN — it would emit the literal bytes
+// "\x89" and fail this test. macOS /bin/sh is bash, which does support \xNN,
+// so the bug only shows on Linux CI. Octal works in both.
 func TestReadImageHappyPath(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("fake-adb shell script not run on windows CI here")
 	}
 	body := `case "$3" in
   shell) printf '%s' "1024" ;;
-  exec-out) printf '\x89PNG\x0d\x0a\x1a\x0a' ;;
+  exec-out) printf '\211PNG\015\012\032\012' ;;
 esac
 `
 	bin := writeFakeAdb(t, body)
