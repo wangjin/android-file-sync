@@ -103,6 +103,32 @@
 .crumb-sep { margin: 0 2px; color: var(--ink-500); }
 .path-input { flex: 1; min-width: 0; }
 
+/* Wrapper around the breadcrumb + history dropdown toggle, so the dropdown
+   can be positioned relative to the whole path row. */
+.crumbs-wrap { position: relative; flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--space-1); }
+/* The breadcrumb itself still flexes to fill; the toggle sits to its right. */
+.crumbs-wrap .crumbs { flex: 1; min-width: 0; }
+.hist-toggle {
+  flex: none; border: none; background: transparent; cursor: pointer;
+  color: var(--ink-500); font-size: var(--fs-xs); padding: 0 var(--space-1);
+  line-height: 1;
+}
+.hist-toggle:hover { color: var(--signal); }
+.hist-dropdown {
+  position: absolute; top: 100%; right: 0; z-index: 50;
+  min-width: 240px; max-width: 420px; max-height: 320px; overflow: auto;
+  background: var(--surface-1, var(--surface)); color: var(--ink-100);
+  border: 1px solid var(--ink-700); border-radius: var(--radius-sm);
+  box-shadow: 0 8px 24px rgba(0,0,0,.35);
+  font-size: var(--fs-sm);
+}
+.hist-item {
+  padding: var(--space-1) var(--space-2); cursor: pointer;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.hist-item:hover { background: var(--ink-800, rgba(255,255,255,.06)); }
+.hist-item.active { color: var(--signal); }
+
 /* ===== Telemetry — the signature =====
    Lifted surface, and the flow bar now carries the accent glow at its head so
    "data is moving" is felt, not just read. */

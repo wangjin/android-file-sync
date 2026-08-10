@@ -156,6 +156,14 @@ export default function App() {
     }
   }
 
+  // ===== Copy file name (single-only, like rename) =====
+  // Writes just the basename to the system clipboard. clipboard.writeText can
+  // reject in non-secure webview contexts; swallow the error so the menu stays
+  // non-blocking (no toast — failure is rare and low-impact).
+  const copyName = (entry: FileEntry) => {
+    navigator.clipboard?.writeText(entry.name).catch(() => {})
+  }
+
   // ===== Context menu =====
   // Local entry: push to device, delete. Device entry: pull to local, delete.
   // Right-clicking a row that isn't selected selects just that row (Finder);
@@ -187,14 +195,20 @@ export default function App() {
       return [
         ...head,
         { label: `↑ 推送至设备${xfer}`, onSelect: pushSelected, disabled: !serial },
-        ...(single ? [{ label: '重命名', onSelect: () => requestRename('local', entry) }] : []),
+        ...(single ? [
+          { label: '📋 复制文件名', onSelect: () => copyName(entry) },
+          { label: '重命名', onSelect: () => requestRename('local', entry) },
+        ] : []),
         { label: count > 1 ? `删除 (${count} 项)` : '删除', onSelect: () => requestDelete('local'), danger: true },
       ]
     }
     return [
       ...head,
       { label: `↓ 拉取到本地${xfer}`, onSelect: pullSelected, disabled: !serial },
-      ...(single ? [{ label: '重命名', onSelect: () => requestRename('device', entry) }] : []),
+      ...(single ? [
+        { label: '📋 复制文件名', onSelect: () => copyName(entry) },
+        { label: '重命名', onSelect: () => requestRename('device', entry) },
+      ] : []),
       { label: count > 1 ? `删除 (${count} 项)` : '删除', onSelect: () => requestDelete('device'), danger: true },
     ]
   }
@@ -207,7 +221,14 @@ export default function App() {
         devices={devices}
         selected={serial}
         onSelect={setSerial}
-        onRefresh={() => (serial ? device.refresh() : location.reload())}
+        onRefresh={() => {
+          // Refresh both panes. Previously this only refreshed the device pane
+          // (or did a full page reload when no device was connected), which left
+          // the local pane stale. Reload the listing instead of the whole page
+          // so selection/sort state survives.
+          if (serial) device.refresh()
+          local.refresh()
+        }}
         onConnect={() => setShowConnect(true)}
         version={appVersion}
         onCheckUpdate={update.checkNow}
@@ -220,12 +241,14 @@ export default function App() {
           <FilePanel title="本地" path={local.root || '~'} entries={local.entries} loading={local.loading} error={local.error}
             onNavigate={navigateLocal} onOpen={local.enter} selectedPaths={localSelected} onSelectChange={setLocalSelected}
             onPreview={(entry) => setPreview({ side: 'local', entry })}
-            onRowContextMenu={(entry, e) => openMenu('local', entry, e)} />
+            onRowContextMenu={(entry, e) => openMenu('local', entry, e)}
+            history={local.history} />
           <div className="seam" aria-hidden />
           <FilePanel title="设备" path={device.path} entries={device.entries} loading={device.loading} error={device.error}
             onNavigate={navigateDevice} onOpen={device.enter} selectedPaths={deviceSelected} onSelectChange={setDeviceSelected}
             onPreview={(entry) => setPreview({ side: 'device', entry })}
-            onRowContextMenu={(entry, e) => openMenu('device', entry, e)} />
+            onRowContextMenu={(entry, e) => openMenu('device', entry, e)}
+            history={device.history} />
         </main>
       )}
 

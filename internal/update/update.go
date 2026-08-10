@@ -12,7 +12,7 @@ import (
 
 // ProxyPrefix is prepended to GitHub URLs so mainland-China users can reach
 // them; requests fall back to a direct connection if the proxy fails.
-const ProxyPrefix = "https://ghproxy.homeboyc.cn/"
+const ProxyPrefix = "https://ghfast.top/"
 
 // GitHubReleaseAPI is the endpoint that returns the latest release JSON.
 const GitHubReleaseAPI = "https://api.github.com/repos/wangjin/android-file-sync/releases/latest"

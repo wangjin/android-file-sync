@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import { ListLocalDir, HomePath } from '../../bindings/androidfs/app.js'
 import { FileEntry } from '../../bindings/androidfs/internal/model/models.js'
+import { useHistory } from './useHistory'
 
 // useLocalBrowser drives the host-side (local) pane the same way
 // useDeviceBrowser drives the device pane: it lists a directory and exposes
@@ -10,6 +11,7 @@ export function useLocalBrowser() {
   const [entries, setEntries] = useState<FileEntry[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const { history, push: pushHistory } = useHistory('androidfs:hist:local')
 
   // Default to the host home directory on first mount.
   useEffect(() => {
@@ -24,13 +26,14 @@ export function useLocalBrowser() {
       const list = await ListLocalDir(p)
       setEntries(list ?? [])
       setRoot(p)
+      pushHistory(p)   // only record paths we actually listed successfully
     } catch (e: any) {
       setError(e?.message ?? String(e))
       setEntries([])
     } finally {
       setLoading(false)
     }
-  }, [root])
+  }, [root, pushHistory])
 
   const navigate = useCallback((p: string) => refresh(p), [refresh])
   const enter = useCallback((name: string) => {
@@ -39,5 +42,5 @@ export function useLocalBrowser() {
     navigate(next)
   }, [navigate, root])
 
-  return { root, setRoot, entries, loading, error, refresh, navigate, enter }
+  return { root, setRoot, entries, loading, error, refresh, navigate, enter, history }
 }
