@@ -28,9 +28,21 @@ jobs:
       - run: go install github.com/go-task/task/v3/cmd/task@latest
       - run: task test
 
-  build-windows:
+  build:
     needs: test
-    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            package_task: package:windows
+            artifact_name: AndroidFS-windows-amd64
+            artifact_path: build/bin/AndroidFS-windows-amd64.exe
+          - os: macos-26
+            package_task: package:darwin
+            artifact_name: AndroidFS-macos
+            artifact_path: build/bin/AndroidFS-macos.dmg
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-go@v6
@@ -47,33 +59,9 @@ jobs:
           key: go-tools-androidfs-${{ runner.os }}-${{ hashFiles('go.sum') }}
       - run: go install github.com/wailsapp/wails/v3/cmd/wails3@latest
       - run: go install github.com/go-task/task/v3/cmd/task@latest
-      - run: task package:windows
-      - uses: actions/upload-artifact@v5
-        with:
-          name: AndroidFS-windows-amd64
-          path: build/bin/AndroidFS-windows-amd64.exe
-
-  build-macos:
-    needs: test
-    runs-on: macos-26
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-go@v6
-        with:
-          go-version: "1.26"
-      - uses: actions/setup-node@v5
-        with:
-          node-version: "22"
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-      - uses: actions/cache@v5
-        with:
-          path: ~/go/bin
-          key: go-tools-androidfs-${{ runner.os }}-${{ hashFiles('go.sum') }}
-      - run: go install github.com/wailsapp/wails/v3/cmd/wails3@latest
-      - run: go install github.com/go-task/task/v3/cmd/task@latest
-      - run: task package:darwin
+      - run: task ${{ matrix.package_task }}
       - name: Create macOS .dmg
+        if: matrix.os == 'macos-26'
         run: |
           mkdir -p /tmp/dmg-content
           cp -R build/bin/AndroidFS.app /tmp/dmg-content/
@@ -81,11 +69,11 @@ jobs:
           hdiutil create -volname "AndroidFS" -srcfolder /tmp/dmg-content -ov -format UDZO build/bin/AndroidFS-macos.dmg
       - uses: actions/upload-artifact@v5
         with:
-          name: AndroidFS-macos
-          path: build/bin/AndroidFS-macos.dmg
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.artifact_path }}
 
   release:
-    needs: [build-windows, build-macos]
+    needs: [build]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
