@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 
-export function PathBreadcrumb({ path, onNavigate, history }: {
+export function PathBreadcrumb({ path, onNavigate, history, onClearHistory }: {
   path: string
   onNavigate: (p: string) => void
   history?: string[]
+  onClearHistory?: () => void
 }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(path)
@@ -68,6 +69,14 @@ export function PathBreadcrumb({ path, onNavigate, history }: {
               onClick={() => { setShowHist(false); onNavigate(p) }}
             >{p}</div>
           ))}
+          {/* Footer: clear all history. Empties the list (and its storage); the
+              dropdown closes because history.length becomes 0 → toggle hidden. */}
+          {onClearHistory && (
+            <div
+              className="hist-clear"
+              onClick={() => { setShowHist(false); onClearHistory() }}
+            >🗑 清除历史</div>
+          )}
         </div>
       )}
     </div>

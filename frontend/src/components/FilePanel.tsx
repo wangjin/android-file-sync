@@ -9,7 +9,7 @@ import { useSort, sortEntries, SortKey } from '../hooks/useSort'
 //   - bare click  → select just this row (anchor = this row)
 //   - Ctrl/Cmd    → toggle this row in the set (anchor = this row)
 //   - Shift       → union the rows between anchor and this row with the set
-export function FilePanel({ title, path, entries, loading, error, onNavigate, onOpen, onPreview, selectedPaths, onSelectChange, onRowContextMenu, history }: {
+export function FilePanel({ title, path, entries, loading, error, onNavigate, onOpen, onPreview, selectedPaths, onSelectChange, onRowContextMenu, history, onClearHistory }: {
   title: string
   path: string
   entries: FileEntry[]
@@ -24,6 +24,7 @@ export function FilePanel({ title, path, entries, loading, error, onNavigate, on
   onSelectChange: (paths: Set<string>) => void
   onRowContextMenu: (entry: FileEntry, e: React.MouseEvent) => void
   history?: string[]
+  onClearHistory?: () => void
 }) {
   const { sort, toggle } = useSort()
   const sorted = sortEntries(entries, sort)
@@ -66,7 +67,7 @@ export function FilePanel({ title, path, entries, loading, error, onNavigate, on
     <section className="panel">
       <header className="panel-head">
         <span className="panel-title">{title}</span>
-        <PathBreadcrumb path={path} onNavigate={onNavigate} history={history} />
+        <PathBreadcrumb path={path} onNavigate={onNavigate} history={history} onClearHistory={onClearHistory} />
         {loading && <span className="badge mono">loading</span>}
       </header>
       <div className="sort-bar">

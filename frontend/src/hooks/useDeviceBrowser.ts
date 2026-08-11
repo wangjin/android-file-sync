@@ -8,7 +8,7 @@ export function useDeviceBrowser(serial: string | null) {
   const [entries, setEntries] = useState<FileEntry[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const { history, push: pushHistory } = useHistory('androidfs:hist:device')
+  const { history, push: pushHistory, clear: clearHistory } = useHistory('androidfs:hist:device')
 
   const refresh = useCallback(async (p = path) => {
     if (!serial) return
@@ -28,5 +28,5 @@ export function useDeviceBrowser(serial: string | null) {
   const navigate = useCallback((p: string) => refresh(p), [refresh])
   const enter = useCallback((name: string) => navigate(`${path}/${name}`.replace(/\/+/g, '/')), [navigate, path])
 
-  return { path, entries, loading, error, refresh, navigate, enter, history }
+  return { path, entries, loading, error, refresh, navigate, enter, history, clearHistory }
 }

@@ -242,13 +242,13 @@ export default function App() {
             onNavigate={navigateLocal} onOpen={local.enter} selectedPaths={localSelected} onSelectChange={setLocalSelected}
             onPreview={(entry) => setPreview({ side: 'local', entry })}
             onRowContextMenu={(entry, e) => openMenu('local', entry, e)}
-            history={local.history} />
+            history={local.history} onClearHistory={local.clearHistory} />
           <div className="seam" aria-hidden />
           <FilePanel title="设备" path={device.path} entries={device.entries} loading={device.loading} error={device.error}
             onNavigate={navigateDevice} onOpen={device.enter} selectedPaths={deviceSelected} onSelectChange={setDeviceSelected}
             onPreview={(entry) => setPreview({ side: 'device', entry })}
             onRowContextMenu={(entry, e) => openMenu('device', entry, e)}
-            history={device.history} />
+            history={device.history} onClearHistory={device.clearHistory} />
         </main>
       )}
 

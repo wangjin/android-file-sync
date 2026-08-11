@@ -33,5 +33,12 @@ export function useHistory(storageKey: string) {
     })
   }, [storageKey])
 
-  return { history, push }
+  // clear empties the history (state + storage). Low-stakes, no confirm:
+  // history just rebuilds as the user navigates again.
+  const clear = useCallback(() => {
+    setHistory([])
+    try { localStorage.removeItem(storageKey) } catch { /* ignore */ }
+  }, [storageKey])
+
+  return { history, push, clear }
 }

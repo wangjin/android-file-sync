@@ -114,20 +114,30 @@
   line-height: 1;
 }
 .hist-toggle:hover { color: var(--signal); }
+/* Solid raised surface so the dropdown reads clearly above the panel rows
+   behind it (panel rows sit on --ink-800; this uses --ink-700, the input/
+   hover tier, plus a strong border + shadow). Previously used undefined
+   --surface vars and rendered transparent over the file list. */
 .hist-dropdown {
   position: absolute; top: 100%; right: 0; z-index: 50;
   min-width: 240px; max-width: 420px; max-height: 320px; overflow: auto;
-  background: var(--surface-1, var(--surface)); color: var(--ink-100);
-  border: 1px solid var(--ink-700); border-radius: var(--radius-sm);
-  box-shadow: 0 8px 24px rgba(0,0,0,.35);
+  background: var(--ink-700); color: var(--frost);
+  border: 1px solid var(--ink-600); border-radius: var(--radius-sm);
+  box-shadow: 0 8px 24px rgba(0,0,0,.45);
   font-size: var(--fs-sm);
 }
 .hist-item {
   padding: var(--space-1) var(--space-2); cursor: pointer;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.hist-item:hover { background: var(--ink-800, rgba(255,255,255,.06)); }
+.hist-item:hover { background: var(--ink-600); }
 .hist-item.active { color: var(--signal); }
+.hist-clear {
+  padding: var(--space-1) var(--space-2); cursor: pointer;
+  border-top: 1px solid var(--ink-600); color: var(--mist);
+  font-size: var(--fs-xs); text-align: right;
+}
+.hist-clear:hover { color: var(--vermilion); }
 
 /* ===== Telemetry — the signature =====
    Lifted surface, and the flow bar now carries the accent glow at its head so

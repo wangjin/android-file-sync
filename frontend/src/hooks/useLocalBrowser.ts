@@ -11,7 +11,7 @@ export function useLocalBrowser() {
   const [entries, setEntries] = useState<FileEntry[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const { history, push: pushHistory } = useHistory('androidfs:hist:local')
+  const { history, push: pushHistory, clear: clearHistory } = useHistory('androidfs:hist:local')
 
   // Default to the host home directory on first mount.
   useEffect(() => {
@@ -42,5 +42,5 @@ export function useLocalBrowser() {
     navigate(next)
   }, [navigate, root])
 
-  return { root, setRoot, entries, loading, error, refresh, navigate, enter, history }
+  return { root, setRoot, entries, loading, error, refresh, navigate, enter, history, clearHistory }
 }
