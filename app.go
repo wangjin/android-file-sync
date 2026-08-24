@@ -26,6 +26,7 @@ type App struct {
 	cancelDownload  context.CancelFunc // cancels an in-flight update download
 	downloadGen     int64              // bumped each DownloadUpdate; identifies the active one
 	mu              sync.Mutex
+	monitorCancel   context.CancelFunc // stops the live resource monitor
 }
 
 func NewApp() *App { return &App{} }
@@ -58,6 +59,7 @@ func (a *App) ServiceStartup(ctx context.Context, options application.ServiceOpt
 }
 
 func (a *App) ServiceShutdown() error {
+	a.StopMonitor()
 	if a.cancelDev != nil {
 		a.cancelDev()
 	}

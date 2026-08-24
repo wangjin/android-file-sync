@@ -17,8 +17,10 @@ import { EmptyState } from './components/EmptyState'
 import { Toast } from './components/Toast'
 import { UpdateDialog } from './components/UpdateDialog'
 import { ImagePreview } from './components/ImagePreview'
+import { MonitorPanel } from './components/MonitorPanel'
 import { isImageFile } from './lib/image'
 import { useUpdate } from './hooks/useUpdate'
+import { useMonitor } from './hooks/useMonitor'
 import { Version } from '../bindings/androidfs/app.js'
 
 // A pending context menu: which side it opened on, and the cursor position.
@@ -33,6 +35,7 @@ export default function App() {
   const device = useDeviceBrowser(serial)
 
   const update = useUpdate()
+  const monitor = useMonitor()
   const [appVersion, setAppVersion] = useState('dev')
   useEffect(() => { Version().then(setAppVersion) }, [])
 
@@ -217,7 +220,7 @@ export default function App() {
 
   return (
     <div className="app-root">
-      <Toolbar
+        <Toolbar
         devices={devices}
         selected={serial}
         onSelect={setSerial}
@@ -232,6 +235,14 @@ export default function App() {
         onConnect={() => setShowConnect(true)}
         version={appVersion}
         onCheckUpdate={update.checkNow}
+        monitorActive={monitor.running}
+        onToggleMonitor={() => {
+          if (monitor.running) {
+            monitor.stop()
+          } else if (serial) {
+            monitor.start(serial)
+          }
+        }}
       />
 
       {!serial ? (
@@ -252,6 +263,15 @@ export default function App() {
         </main>
       )}
 
+      {monitor.running && serial && (
+        <MonitorPanel
+          samples={monitor.samples}
+          running={monitor.running}
+          intervalMs={monitor.intervalMs}
+          onIntervalChange={monitor.changeInterval}
+          onStop={monitor.stop}
+        />
+      )}
       <TransferTelemetry tasks={tasks} onDismiss={dismiss} />
 
       {menu && (

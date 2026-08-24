@@ -173,6 +173,22 @@ export function RenameLocal(oldPath: string, newPath: string): $CancellablePromi
 }
 
 /**
+ * StartMonitor begins periodic sampling of CPU and NPU usage for the given
+ * device, emitting a "monitor:sample" event after each sample. A second call
+ * restarts the loop with the new serial/interval.
+ */
+export function StartMonitor(serial: string, intervalMs: number): $CancellablePromise<void> {
+    return $Call.ByID(1220524391, serial, intervalMs);
+}
+
+/**
+ * StopMonitor halts the active monitor (no-op if not running).
+ */
+export function StopMonitor(): $CancellablePromise<void> {
+    return $Call.ByID(3309543569);
+}
+
+/**
  * Version returns the running application version (injected at build time, or
  * "dev" in development).
  */

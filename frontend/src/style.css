@@ -420,3 +420,64 @@
   font-size: var(--fs-md);
 }
 .image-preview-error { color: var(--vermilion); }
+
+/* ===== Resource monitor =====
+   A fixed strip below the toolbar: two live sparklines (CPU mint, NPU amber)
+   with the latest value readout and a configurable sampling interval. */
+.monitor-panel {
+  flex-shrink: 0;
+  background: var(--ink-800);
+  border-bottom: 1px solid var(--ink-600);
+}
+.monitor-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--ink-700);
+}
+.monitor-title { display: flex; align-items: center; gap: var(--space-2); }
+.monitor-live-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--signal);
+  animation: monitor-pulse 1.5s ease-in-out infinite;
+}
+@keyframes monitor-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 6px var(--signal); }
+  50% { opacity: 0.4; box-shadow: none; }
+}
+.monitor-interval { width: 80px; }
+.monitor-body {
+  display: flex;
+  gap: var(--space-5);
+  padding: var(--space-3) var(--space-4);
+}
+.monitor-metric { flex: 1; min-width: 0; }
+.monitor-metric-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: var(--space-1);
+}
+.monitor-label {
+  font-size: var(--fs-xs);
+  color: var(--mist);
+  letter-spacing: 0.05em;
+}
+.monitor-value {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+}
+.monitor-chart {
+  display: block;
+  width: 100%;
+  height: 56px;
+  background: var(--ink-900);
+  border-radius: var(--radius-sm);
+}
+.monitor-grid {
+  stroke: var(--ink-600);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+  opacity: 0.5;
+}
