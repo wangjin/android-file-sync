@@ -6,7 +6,6 @@ const H = 40
 function buildSegments(values: (number | null)[]): string[] {
   const n = values.length
   if (n < 2) return []
-  const step = W / 120
   const segs: string[] = []
   let cur: string[] = []
   for (let i = 0; i < n; i++) {
@@ -62,38 +61,13 @@ function Sparkline({ label, values, color }: {
   )
 }
 
-export function MonitorPanel({ samples, running, intervalMs, onIntervalChange, onStop }: {
-  samples: MonitorSample[]
-  running: boolean
-  intervalMs: number
-  onIntervalChange: (ms: number) => void
-  onStop: () => void
-}) {
+// The two live sparklines (CPU mint, NPU amber). Rendered by the monitor
+// module's board; the tab chip in the module bar shows the mini readout.
+export function MonitorCharts({ samples }: { samples: MonitorSample[] }) {
   return (
-    <section className="monitor-panel">
-      <header className="monitor-head">
-        <span className="panel-title monitor-title">
-          监控
-          {running && <span className="monitor-live-dot" />}
-        </span>
-        <select
-          className="monitor-interval"
-          value={intervalMs}
-          onChange={e => onIntervalChange(Number(e.target.value))}
-          disabled={!running}
-        >
-          <option value={500}>0.5s</option>
-          <option value={1000}>1s</option>
-          <option value={2000}>2s</option>
-          <option value={5000}>5s</option>
-        </select>
-        <span className="toolbar-spacer" />
-        <button className="telem-cancel" onClick={onStop}>■ 停止</button>
-      </header>
-      <div className="monitor-body">
-        <Sparkline label="CPU" values={samples.map(s => s.cpu)} color="var(--signal)" />
-        <Sparkline label="NPU" values={samples.map(s => s.npu)} color="var(--amber)" />
-      </div>
-    </section>
+    <div className="monitor-body">
+      <Sparkline label="CPU" values={samples.map(s => s.cpu)} color="var(--signal)" />
+      <Sparkline label="NPU" values={samples.map(s => s.npu)} color="var(--amber)" />
+    </div>
   )
 }

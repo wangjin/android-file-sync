@@ -1,7 +1,7 @@
 import { TransferTask, TransferState, TransferDirection } from '../../bindings/androidfs/internal/model/models.js'
 import { CancelTask } from '../../bindings/androidfs/app.js'
 
-// The signature element: mid-seam telemetry. When a task is active it lights
+// The signature element: in-seam telemetry. When a task is active it lights
 // up --signal and shows live readouts. This is the one memorable thing; the
 // rest stays disciplined.
 //

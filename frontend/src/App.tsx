@@ -7,6 +7,7 @@ import { useTransfers } from './hooks/useTransfers'
 import { PushFiles, PullFiles, Delete, DeleteLocal, Rename, RenameLocal } from '../bindings/androidfs/app.js'
 import { FileEntry } from '../bindings/androidfs/internal/model/models.js'
 import { Toolbar } from './components/Toolbar'
+import { ModuleBar, ModuleId } from './components/ModuleBar'
 import { FilePanel } from './components/FilePanel'
 import { TransferTelemetry } from './components/TransferTelemetry'
 import { ConnectDialog } from './components/ConnectDialog'
@@ -17,10 +18,10 @@ import { EmptyState } from './components/EmptyState'
 import { Toast } from './components/Toast'
 import { UpdateDialog } from './components/UpdateDialog'
 import { ImagePreview } from './components/ImagePreview'
-import { MonitorPanel } from './components/MonitorPanel'
+import { MonitorCharts } from './components/MonitorPanel'
 import { isImageFile } from './lib/image'
 import { useUpdate } from './hooks/useUpdate'
-import { useMonitor } from './hooks/useMonitor'
+import { useMonitor, MonitorSample } from './hooks/useMonitor'
 import { Version } from '../bindings/androidfs/app.js'
 
 // A pending context menu: which side it opened on, and the cursor position.
@@ -38,6 +39,17 @@ export default function App() {
   const monitor = useMonitor()
   const [appVersion, setAppVersion] = useState('dev')
   useEffect(() => { Version().then(setAppVersion) }, [])
+
+  // Top-level module: the file manager (browse + transfer) and the resource
+  // monitor are peers — switching modules swaps the whole work area, so
+  // neither one competes with the other for layout space.
+  const [module, setModule] = useState<ModuleId>('files')
+
+  // Latest monitor sample, surfaced as a mini readout on the monitor tab chip
+  // so the data stays visible even while the files module is active.
+  const monitorLatest = monitor.samples.length
+    ? monitor.samples[monitor.samples.length - 1]
+    : null
 
   // Each pane tracks its own selection as a path set — empty = none selected.
   const [localSelected, setLocalSelected] = useState<Set<string>>(new Set())
@@ -218,9 +230,13 @@ export default function App() {
 
   const menuItems: MenuItem[] = menu ? buildMenuItems(menu.side, menu.entry) : []
 
+  const startMonitor = () => {
+    if (serial) monitor.start(serial)
+  }
+
   return (
     <div className="app-root">
-        <Toolbar
+      <Toolbar
         devices={devices}
         selected={serial}
         onSelect={setSerial}
@@ -235,44 +251,51 @@ export default function App() {
         onConnect={() => setShowConnect(true)}
         version={appVersion}
         onCheckUpdate={update.checkNow}
-        monitorActive={monitor.running}
-        onToggleMonitor={() => {
-          if (monitor.running) {
-            monitor.stop()
-          } else if (serial) {
-            monitor.start(serial)
-          }
-        }}
       />
 
-      {!serial ? (
-        <EmptyState message="用 USB 连接设备并开启 USB 调试,或点右上「无线连接」。右键文件可推送/拉取/删除,双击图片可直接预览。" />
-      ) : (
-        <main className="panes">
-          <FilePanel title="本地" path={local.root || '~'} entries={local.entries} loading={local.loading} error={local.error}
-            onNavigate={navigateLocal} onOpen={local.enter} selectedPaths={localSelected} onSelectChange={setLocalSelected}
-            onPreview={(entry) => setPreview({ side: 'local', entry })}
-            onRowContextMenu={(entry, e) => openMenu('local', entry, e)}
-            history={local.history} onClearHistory={local.clearHistory} />
-          <div className="seam" aria-hidden />
-          <FilePanel title="设备" path={device.path} entries={device.entries} loading={device.loading} error={device.error}
-            onNavigate={navigateDevice} onOpen={device.enter} selectedPaths={deviceSelected} onSelectChange={setDeviceSelected}
-            onPreview={(entry) => setPreview({ side: 'device', entry })}
-            onRowContextMenu={(entry, e) => openMenu('device', entry, e)}
-            history={device.history} onClearHistory={device.clearHistory} />
-        </main>
-      )}
+      <ModuleBar
+        module={module}
+        onChange={setModule}
+        monitorActive={monitor.running}
+        monitorLatest={monitorLatest}
+      />
 
-      {monitor.running && serial && (
-        <MonitorPanel
-          samples={monitor.samples}
-          running={monitor.running}
-          intervalMs={monitor.intervalMs}
-          onIntervalChange={monitor.changeInterval}
-          onStop={monitor.stop}
-        />
-      )}
-      <TransferTelemetry tasks={tasks} onDismiss={dismiss} />
+      <main className="work-area">
+        {module === 'files' ? (
+          !serial ? (
+            <EmptyState message="用 USB 连接设备并开启 USB 调试,或点右上「无线连接」。右键文件可推送/拉取/删除,双击图片可直接预览。" />
+          ) : (
+            <div className="files-area">
+              <div className="panes">
+                <FilePanel title="本地" path={local.root || '~'} entries={local.entries} loading={local.loading} error={local.error}
+                  onNavigate={navigateLocal} onOpen={local.enter} selectedPaths={localSelected} onSelectChange={setLocalSelected}
+                  onPreview={(entry) => setPreview({ side: 'local', entry })}
+                  onRowContextMenu={(entry, e) => openMenu('local', entry, e)}
+                  history={local.history} onClearHistory={local.clearHistory} />
+                <div className="seam" aria-hidden />
+                <FilePanel title="设备" path={device.path} entries={device.entries} loading={device.loading} error={device.error}
+                  onNavigate={navigateDevice} onOpen={device.enter} selectedPaths={deviceSelected} onSelectChange={setDeviceSelected}
+                  onPreview={(entry) => setPreview({ side: 'device', entry })}
+                  onRowContextMenu={(entry, e) => openMenu('device', entry, e)}
+                  history={device.history} onClearHistory={device.clearHistory} />
+              </div>
+              <TransferTelemetry tasks={tasks} onDismiss={dismiss} />
+            </div>
+          )
+        ) : (
+          <MonitorModule
+            running={monitor.running}
+            samples={monitor.samples}
+            intervalMs={monitor.intervalMs}
+            onIntervalChange={monitor.changeInterval}
+            onStart={startMonitor}
+            onStop={monitor.stop}
+            canStart={!!serial}
+            taskCount={tasks.length}
+            onShowFiles={() => setModule('files')}
+          />
+        )}
+      </main>
 
       {menu && (
         <ContextMenu x={menu.x} y={menu.y} items={menuItems} onClose={() => setMenu(null)} />
@@ -313,5 +336,72 @@ export default function App() {
       )}
       <Toast message={update.toast} />
     </div>
+  )
+}
+
+// ===== Monitor module =====
+// The monitor as a first-class module: a full-width instrument board instead
+// of a squeezed bottom strip. The header carries the controls (start/stop +
+// sampling interval); the body gives both sparklines the room they need.
+function MonitorModule({ running, samples, intervalMs, onIntervalChange, onStart, onStop, canStart, taskCount, onShowFiles }: {
+  running: boolean
+  samples: MonitorSample[]
+  intervalMs: number
+  onIntervalChange: (ms: number) => void
+  onStart: () => void
+  onStop: () => void
+  canStart: boolean
+  taskCount: number
+  onShowFiles: () => void
+}) {
+  const latest = samples.length ? samples[samples.length - 1] : null
+  return (
+    <section className="monitor-module">
+      <header className="monitor-module-head">
+        <span className="panel-title monitor-title">
+          资源监控
+          {running && <span className="monitor-live-dot" />}
+        </span>
+        {running && latest && (
+          <span className="monitor-module-readout mono">
+            CPU <strong className="monitor-readout-cpu">{latest.cpu != null ? `${latest.cpu.toFixed(1)}%` : '—'}</strong>
+            <span className="module-tab-live-sep" aria-hidden>·</span>
+            NPU <strong className="monitor-readout-npu">{latest.npu != null ? `${latest.npu.toFixed(1)}%` : '—'}</strong>
+          </span>
+        )}
+        <span className="toolbar-spacer" />
+        {taskCount > 0 && (
+          <button className="btn-quiet" onClick={onShowFiles} title="切换回文件模块查看传输进度">
+            {taskCount} 个传输任务 ↗
+          </button>
+        )}
+        <select
+          className="monitor-interval"
+          value={intervalMs}
+          onChange={e => onIntervalChange(Number(e.target.value))}
+          disabled={!running}
+        >
+          <option value={500}>0.5s</option>
+          <option value={1000}>1s</option>
+          <option value={2000}>2s</option>
+          <option value={5000}>5s</option>
+        </select>
+        {running
+          ? <button className="telem-cancel" onClick={onStop}>■ 停止</button>
+          : <button className="primary" onClick={onStart} disabled={!canStart}>开始监控</button>}
+      </header>
+      <div className="monitor-module-body">
+        {running ? (
+          <MonitorCharts samples={samples} />
+        ) : (
+          <div className="monitor-idle">
+            <p>{canStart ? '采样尚未开始。' : '连接设备后即可采样。'}</p>
+            {canStart && (
+              <p className="muted">开始后将每 {intervalMs / 1000}s 采集一次设备的 CPU 与 NPU 占用。</p>
+            )}
+          </div>
+        )}
+      </div>
+    </section>
   )
 }
