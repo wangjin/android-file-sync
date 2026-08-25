@@ -43,6 +43,26 @@ func TestParseTopCPU_NoSummary(t *testing.T) {
 	}
 }
 
+func TestParseTopCPU_RK3588ToyboxAggregate(t *testing.T) {
+	// Real output from RK3588 (8-core) via `top -bn1` on Android toybox.
+	out := `top: unknown option 'b'
+Usage: top [OPTION...]
+top - 07:58:03 up 49 min,  0 users,  load average: 0.05, 0.09, 0.10
+Tasks:  203 total,   1 running, 202 sleeping,   0 stopped,   0 zombie
+800%cpu  42%user  0%nice 46%sys 704%idle  0%iow  8%irq  0%sirq  0%host
+ 3.8G Mem  1.6G free  2.2G used,   0 buffers
+ 0.0KiB Swap  0.0KiB free   0.0KiB used  3.6G cached
+`
+	cpu, ok := parseTopCPU(out)
+	if !ok {
+		t.Fatal("expected to parse RK3588 toybox aggregate top output")
+	}
+	// 100 * (1 - 704/800) = 12
+	if cpu < 11.9 || cpu > 12.1 {
+		t.Fatalf("unexpected CPU: %v (want 12)", cpu)
+	}
+}
+
 func TestParseTopCPU_ClaampsToRange(t *testing.T) {
 	if got := clampPct(-5); got != 0 {
 		t.Errorf("clampPct(-5) = %v, want 0", got)
