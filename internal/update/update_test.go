@@ -10,7 +10,7 @@ import (
 
 func TestWithProxy(t *testing.T) {
 	got := withProxy("https://api.github.com/x")
-	want := "https://ghfast.top/https://api.github.com/x"
+	want := "https://v4.gh-proxy.org/https://api.github.com/x"
 	if got != want {
 		t.Errorf("withProxy = %q; want %q", got, want)
 	}
