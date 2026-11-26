@@ -35,9 +35,9 @@ func (a *App) StartMonitor(serial string, intervalMs int) error {
 
 	// Emit an initial empty frame so the frontend immediately knows the
 	// monitor is live (the UI then shows "collecting…").
-	a.sampleOnce(ctx, serial)
-
 	interval := time.Duration(intervalMs) * time.Millisecond
+	a.sampleOnce(ctx, serial, interval)
+
 	go a.monitorLoop(ctx, serial, interval)
 	return nil
 }
@@ -60,19 +60,33 @@ func (a *App) StopMonitor() {
 func (a *App) monitorLoop(ctx context.Context, serial string, interval time.Duration) {
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
-	a.sampleOnce(ctx, serial)
+	a.sampleOnce(ctx, serial, interval)
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			a.sampleOnce(ctx, serial)
+			a.sampleOnce(ctx, serial, interval)
 		}
 	}
 }
 
-func (a *App) sampleOnce(ctx context.Context, serial string) {
-	sampleCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+// cpuSampleSleep derives the /proc/stat diff window from the sample
+// interval: interval/3 clamped to [100ms, 1s] so the in-command sleep never
+// starves the ticker even at the 200ms minimum interval.
+func cpuSampleSleep(interval time.Duration) time.Duration {
+	s := interval / 3
+	if s < 100*time.Millisecond {
+		s = 100 * time.Millisecond
+	}
+	if s > time.Second {
+		s = time.Second
+	}
+	return s
+}
+
+func (a *App) sampleOnce(ctx context.Context, serial string, interval time.Duration) {
+	sampleCtx, cancel := context.WithTimeout(ctx, 5*time.Second+cpuSampleSleep(interval))
 	defer cancel()
 
 	sample := model.MonitorSample{Ts: nowMilli()}
@@ -80,14 +94,16 @@ func (a *App) sampleOnce(ctx context.Context, serial string) {
 	wg.Add(2)
 	go func() {
 		defer wg.Done()
-		if v, err := a.client.SampleCPU(sampleCtx, serial); err == nil {
+		if v, cores, err := a.client.SampleCPUCores(sampleCtx, serial, cpuSampleSleep(interval)); err == nil {
 			sample.CPU = &v
+			sample.CPUCores = cores
 		}
 	}()
 	go func() {
 		defer wg.Done()
-		if v, err := a.client.SampleNPULoad(sampleCtx, serial); err == nil {
+		if v, cores, err := a.client.SampleNPULoads(sampleCtx, serial); err == nil {
 			sample.NPU = &v
+			sample.NPUCores = cores
 		}
 	}()
 	wg.Wait()
@@ -98,4 +114,3 @@ func (a *App) sampleOnce(ctx context.Context, serial string) {
 // nowMilli returns the current time as unix milliseconds. Split out so tests
 // can stub it out if they ever need deterministic timestamps.
 func nowMilli() int64 { return time.Now().UnixMilli() }
-

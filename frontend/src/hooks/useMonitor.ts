@@ -4,7 +4,9 @@ import { Events } from '@wailsio/runtime'
 export interface MonitorSample {
   ts: number
   cpu: number | null
+  cpuCores?: number[] | null
   npu: number | null
+  npuCores?: number[] | null
 }
 
 const MAX_SAMPLES = 120
